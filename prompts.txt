@@ -1,5 +1,10 @@
 [
 """Give me a python list that contains a dictionary for each empty field on the provided worksheet.
-The dictionary should be built like this (The values used are just placeholders): {"task_hierarchy": [5, 1]}.
-In this example the task is the first subtask of task 5. If the task hierarchy is larger the list can also be longer."""
+The dictionary should be built like this (The values used are just placeholders): {"task_hierarchy": [5, 1], "answer_bounding_box": [842, 219, 1092, 476]}.
+In this example the task is the first subtask of task 5. If the task hierarchy is larger the list can also be longer.
+answer_bounding_box has to return a bounding box of the empty field to later input the result of the question.
+The bouding box must be in the format [x1, y1, x2, y2] to be correctly displayed.
+The bounding boxes have to be on the provided blank spots on the worksheets. These spots are usually indicated by underscores or empty rectangles
+x = 0 and y = 0 are in the top left corner of the provided image.
+the resolution of the image is: """
 ]
