@@ -1,0 +1,5 @@
+[
+"""Give me a python list that contains a dictionary for each empty field on the provided worksheet.
+The dictionary should be built like this (The values used are just placeholders): {"task_hierarchy": [5, 1]}.
+In this example the task is the first subtask of task 5. If the task hierarchy is larger the list can also be longer."""
+]
