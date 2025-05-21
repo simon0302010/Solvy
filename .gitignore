@@ -3,3 +3,6 @@ __pycache__/
 .env
 example_with_bounding_boxes.jpg
 worksheet.png
+test.py
+temp/
+AI/
