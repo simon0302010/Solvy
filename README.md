@@ -1,3 +1,4 @@
+https://hackatime-badge.hackclub.com/U08HC7N4JJW/Solvy
 # Solvy
 
 App to automatically solve worksheets using AI.
