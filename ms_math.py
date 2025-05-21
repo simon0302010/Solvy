@@ -21,9 +21,12 @@ def solve_latex(latex_expression, language="en"):
 
     solved_latex = json.loads(answer.text)["results"][0]["tags"][0]["actions"][0]["customData"]
     solved_latex = json.loads(solved_latex)["previewText"]
-    if json.loads(solved_latex)["errorMessage"] != "": raise(json.loads(solved_latex))
+    if json.loads(solved_latex)["errorMessage"] != "": raise(json.loads(solved_latex)["errorMessage"])
     solved_latex = json.loads(solved_latex)["mathSolverResult"]
-    if solved_latex["errorMessage"] != "": raise(json.loads(solved_latex))
+    if solved_latex["errorMessage"] != "": raise(solved_latex["errorMessage"])
     solved_latex = solved_latex["actions"]
 
     return solved_latex
+
+if __name__ == "__main__":
+    print(solve_latex("x^2 = 9"))
