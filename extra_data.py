@@ -3,20 +3,19 @@ from google.genai import types
 
 # ================= PROMPTS ================= #
 prompts = [
-"""Give me a python list that contains a dictionary for each empty field on the provided worksheet.
-The dictionary should be built like this (The values used are just placeholders): {"task_hierarchy": [5, 1], "answer_bounding_box": [842, 219, 1682, 476]}.
-In this example the task is the first subtask of task 5. If the task hierarchy is larger the list can also be longer.
-answer_bounding_box has to return a bounding box of the empty field to later input the result of the question.
-The bouding box must be in the format [x1, y1, x2, y2] to be correctly displayed.
-The bounding boxes have to be on the provided blank spots on the worksheets. These spots are usually indicated by underscores or empty rectangles
-x = 0 and y = 0 are in the top left corner of the provided image.
-Don't write an explaination of some kind, just the raw data.
+"""
+Identify all empty fields on the worksheet and provide their bounding boxes.
+Return the bounding boxes in the order they appear from top to bottom, left to right on the worksheet.
 """,
-"""This is a image of the bounding boxes you set the first time. Please refine these positions and give me the EXACT same output you gave the last
-time just with the refined coordinates of the bounding boxes. Don't write an explaination of some kind, just the raw data.
+"""
+This image shows the bounding boxes you initially provided, with each box numbered according to your original order.
+Please review and refine the positions of these bounding boxes.
+Return the updated bounding boxes in the same order.
+To modify the bounding boxes, just use the same API that is used for creating them, just use the new values.
+The data you first provided is NEVER perfect. You HAVE to refine it by calling the function call.
 """
 ]
-# ================= FUNCTION CALLING ================= #
+# ===== FUNCTION CALLING CONFIGURATION ===== #
 tools = [
     types.Tool(
         function_declarations=[
