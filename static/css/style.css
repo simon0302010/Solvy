@@ -1,0 +1,41 @@
+body {
+    background-color: #1c1b1e;
+    color: white;
+}
+.top-bar {
+    border-bottom: 3px solid #ff9aa2;
+    text-align: center;
+    margin-bottom: 20px;
+}
+.btn-custom {
+    background-color: #663c43;
+    color: white;
+    margin: 10px;
+    border-radius: 12px;
+}
+.card-custom {
+    background-color: #2e2c31;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.status {
+    color: #76ff76;
+    font-weight: bold;
+    float: right;
+}
+.bottom-nav {
+    background-color: #2e2c31;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 10px 0;
+}
+.nav-icon {
+    text-align: center;
+    color: white;
+    font-size: 12px;
+}
+.nav-icon.active {
+    color: #ff9aa2;
+}
