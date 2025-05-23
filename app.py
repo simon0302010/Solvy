@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from PIL import Image
+from run_inference import run_inference
 
 load_dotenv()
 

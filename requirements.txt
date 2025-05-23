@@ -3,3 +3,5 @@ google-genai
 dotenv
 opencv-python
 Pillow
+supervision
+ultralytics
