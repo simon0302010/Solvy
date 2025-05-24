@@ -5,8 +5,7 @@ from ultralytics import YOLO
 
 def run_inference(image_path, output_image_path, model_path="models/field_detect.pt"):
     model = YOLO(model_path)
-    #image = cv2.imread(image_path)
-    image = cv2.imread("test_worksheets/2.png")
+    image = cv2.imread(image_path)
 
     results = model(image)[0]
     detections = sv.Detections.from_ultralytics(results)
@@ -48,4 +47,4 @@ def run_inference(image_path, output_image_path, model_path="models/field_detect
         print(f"Error saving image: {e}")
 
 if __name__ == "__main__":
-    run_inference("test_worksheets/2.png", "image.png")
+    run_inference("test_worksheets/1.png", "image.png")
