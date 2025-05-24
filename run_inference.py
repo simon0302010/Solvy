@@ -49,7 +49,7 @@ def run_inference(image_path, output_image_path):
         for temp_coordinate in bounding_box.tolist():
             bounding_boxes_temp.append(round(int(temp_coordinate)))
         bounding_boxes_dict[str(idx)] = (bounding_boxes_temp)
-    print(f"inference took {time() - start_time} seconds.")
+    print(f"inference took {round(time() - start_time, 2)} seconds.")
     return bounding_boxes_dict
 
 if __name__ == "__main__":

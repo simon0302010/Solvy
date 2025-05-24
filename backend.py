@@ -17,7 +17,7 @@ gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
 
 # Initialize Gemini Client
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY2"))
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 worksheet_file = Image.open(worksheet_file_path)
 worksheet_file.save(temp_worksheet_file_path)
@@ -57,7 +57,7 @@ def run_gemini():
                     mime_type="image/png",
                     data=worksheet_bytes
                 ),
-                types.Part.from_text(text=(gemini_prompts[2] + str(inference_result))),
+                types.Part.from_text(text=(gemini_prompts[0] + str(inference_result))),
                 #types.Part.from_text(text="Create these bounding boxes: " + str(inference_result)),
             ],
         ),
@@ -74,8 +74,6 @@ def run_gemini():
         config=generate_content_config,
     )
     
-    print(gemini_response)
-
     function_call = {}
     for key, value in gemini_response.candidates[0].content.parts[0].function_call.args.items():
         function_call[key[9:]] = value

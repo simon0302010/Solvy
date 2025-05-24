@@ -24,9 +24,13 @@ Identify all input fields and ensure each one is enclosed in a single, correct b
 Please analyze the image and return the final bounding boxes using function calling.
 
 The bounding boxes on the image and the coordinates I will provide you with will ALWAYS match up.
+YOU ARE OBLIGTED TO USE FUNCTION CALLING EVEN JUST TO OUTPUT THE DATA I GAVE YOU BEFORE!
+YOU WILL DIE IF YOU DON'T RESPOND WITH A FUNCTION CALL!
+YOU ARE IN AN APP PLEASE COOPORARTE.
 
+
+ONLY GIVE IT ONCE.
 These are the coordinates of the bounding boxes seen on the image:
-
 
 """,
 """
