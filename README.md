@@ -19,7 +19,7 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/simon0302010/Solvy
+   git clone https://github.com/simon0302010/Solvy.git
    cd Solvy
    ```
 2. **Install dependencies**

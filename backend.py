@@ -6,7 +6,6 @@ from google import genai
 from google.genai import types
 from PIL import Image
 from run_inference import run_inference
-import base64
 
 load_dotenv()
 
@@ -18,7 +17,7 @@ gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
 
 # Initialize Gemini Client
-gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY2"))
 
 worksheet_file = Image.open(worksheet_file_path)
 worksheet_file.save(temp_worksheet_file_path)
@@ -58,7 +57,8 @@ def run_gemini():
                     mime_type="image/png",
                     data=worksheet_bytes
                 ),
-                types.Part.from_text(text=(gemini_prompts[0] + str(inference_result))),
+                types.Part.from_text(text=(gemini_prompts[2] + str(inference_result))),
+                #types.Part.from_text(text="Create these bounding boxes: " + str(inference_result)),
             ],
         ),
     ]
@@ -68,12 +68,20 @@ def run_gemini():
         response_mime_type="text/plain",
     )
 
-    for chunk in gemini_client.models.generate_content(
+    gemini_response = gemini_client.models.generate_content(
         model=gemini_model,
         contents=gemini_contents,
         config=generate_content_config,
-    ):
-        print(chunk)
+    )
+    
+    print(gemini_response)
+
+    function_call = {}
+    for key, value in gemini_response.candidates[0].content.parts[0].function_call.args.items():
+        function_call[key[9:]] = value
+    function_call = function_call[""]
+    print(function_call)
+    add_bounding_boxes(function_call, worksheet_file_path, "temp/worksheet2.png")
 
 # bounding_boxes = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
 
@@ -81,14 +89,14 @@ def run_gemini():
 
 run_gemini()
 
-with open(temp_worksheet_file_path, "rb") as f:
-    worksheet_bytes_modified = f.read()
+#with open(temp_worksheet_file_path, "rb") as f:
+#    worksheet_bytes_modified = f.read()
 
-contents = [
-    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
-    types.Content(role="model", parts=[types.Part.from_text(text=("This was a function call: " + str(function_call)))]),
-    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes_modified), types.Part.from_text(text=gemini_prompts[1])]),
-]
+#contents = [
+#    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
+#    types.Content(role="model", parts=[types.Part.from_text(text=("This was a function call: " + str(function_call)))]),
+#    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes_modified), types.Part.from_text(text=gemini_prompts[1])]),
+#]
 
 #start_time = time.time()
 #gemini_response = gemini_client.models.generate_content(model=gemini_model, contents=contents, config=generate_content_config)

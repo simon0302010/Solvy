@@ -25,7 +25,7 @@ Please analyze the image and return the final bounding boxes using function call
 
 The bounding boxes on the image and the coordinates I will provide you with will ALWAYS match up.
 
-These are the coordinates of the bounding boxes:
+These are the coordinates of the bounding boxes seen on the image:
 
 
 """,
@@ -37,7 +37,7 @@ To modify the bounding boxes, just use the same API that is used for creating th
 The data you first provided is NEVER perfect. You HAVE to refine it by calling the function call.
 """,
 """
-Describe what you see in detail. Also do a test function call.
+Create two bounding boxes 100x100 pixels big at 100,100 and 200,200 by giving the bounding box creation api the coordinates to such boxes.
 """
 ]
 # ===== FUNCTION CALLING CONFIGURATION ===== #
@@ -46,7 +46,7 @@ tools = [
         function_declarations=[
             types.FunctionDeclaration(
                 name="createBoundingBox",
-                description="Creates multiple bounding boxes with the given sets of coordinates.",
+                description="Creates multiple bounding boxes with the given sets of coordinates",
                 parameters=genai.types.Schema(
                     type = genai.types.Type.OBJECT,
                     required = ["boxes"],
