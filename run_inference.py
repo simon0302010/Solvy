@@ -1,7 +1,7 @@
 import cv2 # Make sure cv2 is imported
 import supervision as sv
 from ultralytics import YOLO
-
+import dataclasses
 
 def run_inference(image_path, output_image_path, model_path="models/field_detect.pt"):
     model = YOLO(model_path)
@@ -40,11 +40,10 @@ def run_inference(image_path, output_image_path, model_path="models/field_detect
         annotated_image = label_annotator.annotate(
             scene=annotated_image, detections=detections, labels=labels
         )
-    try:
-        cv2.imwrite(output_image_path, annotated_image)
-        print(f"Annotated image saved as {output_image_path} in the current directory.")
-    except Exception as e:
-        print(f"Error saving image: {e}")
+    cv2.imwrite(output_image_path, annotated_image)
+    
+    bounding_boxes = dataclasses.fields(detections)[0]
+    print(getattr(detections, bounding_boxes.name))
 
 if __name__ == "__main__":
     run_inference("test_worksheets/1.png", "image.png")
