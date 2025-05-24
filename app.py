@@ -2,7 +2,7 @@ import time
 import os
 import json
 import cv2
-import extra_dataf
+import extra_data
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -26,9 +26,9 @@ def add_bounding_boxes(bounding_box_data, image_path, output_filename):
     image = cv2.imread(image_path)
 
     for idx, bounding_box in enumerate(bounding_box_data):
-        start_point = int(bounding_box["xmin"]), int(bounding_box["ymin"])
-        end_point = int(bounding_box["xmax"]), int(bounding_box["ymax"])
-        middle_point = int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2), int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
+        start_point = int(bounding_box[0]), int(bounding_box[1])
+        end_point = int(bounding_box[2]), int(bounding_box[3])
+        middle_point = int((int(bounding_box[0]) + int(bounding_box[2])) / 2), int((int(bounding_box[1]) + int(bounding_box[3])) / 2 + 5)
         cv2.rectangle(image, start_point, end_point, color=(0,0,255), thickness=1)
 
         cv2.putText(

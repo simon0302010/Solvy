@@ -1,10 +1,13 @@
-import cv2 # Make sure cv2 is imported
+import cv2
 import supervision as sv
 from ultralytics import YOLO
 import dataclasses
+from time import time
 
-def run_inference(image_path, output_image_path, model_path="models/field_detect.pt"):
-    model = YOLO(model_path)
+model = YOLO("models/field_detect_2.pt")
+
+def run_inference(image_path, output_image_path):
+    start_time = time()
     image = cv2.imread(image_path)
 
     results = model(image)[0]
@@ -43,7 +46,12 @@ def run_inference(image_path, output_image_path, model_path="models/field_detect
     cv2.imwrite(output_image_path, annotated_image)
     
     bounding_boxes = dataclasses.fields(detections)[0]
-    print(getattr(detections, bounding_boxes.name))
+    bounding_boxes = getattr(detections, bounding_boxes.name)
+    bounding_boxes_list = []
+    for bounding_box in bounding_boxes:
+        bounding_boxes_list.append(bounding_box.tolist())
+    print(f"inference took {time() - start_time} seconds.")
+    return bounding_boxes_list
 
 if __name__ == "__main__":
-    run_inference("test_worksheets/1.png", "image.png")
+    print(run_inference("test_worksheets/3.jpg", "image.png"))
