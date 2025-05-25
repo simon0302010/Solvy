@@ -1,4 +1,5 @@
 import os
+import sys
 import cv2
 import extra_data
 from dotenv import load_dotenv
@@ -6,13 +7,14 @@ from google import genai
 from google.genai import types
 from PIL import Image
 from run_inference import run_inference
+from time import time
 
 load_dotenv()
 
 # Define Variables
-#gemini_model = "gemini-2.5-flash-preview-05-20"
-gemini_model = "gemini-2.0-flash"
-worksheet_file_path = "test_worksheets/4.jpg"
+gemini_model = "gemini-2.5-flash-preview-05-20"
+#gemini_model = "gemini-2.0-flash"
+worksheet_file_path = f"test_worksheets/{sys.argv[1]}"
 temp_worksheet_file_path = "temp/worksheet.png"
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
@@ -67,17 +69,19 @@ def run_gemini():
     generate_content_config = types.GenerateContentConfig(
         tools=gemini_tools,
         response_mime_type="text/plain",
+        thinking_config=types.ThinkingConfig(thinking_budget=2048)
     )
 
+    start_time = time()
     gemini_response = gemini_client.models.generate_content(
         model=gemini_model,
         contents=gemini_contents,
         config=generate_content_config,
     )
+    print(f"gemini took {round(time() - start_time, 2)} seconds.")
     
-    print(gemini_prompts[0] + str(inference_result))
-
-    print(gemini_response)
+    print("Thoughts tokens:",gemini_response.usage_metadata.thoughts_token_count)
+    print("Output tokens:",gemini_response.usage_metadata.candidates_token_count)
 
     function_call = {}
     for part in gemini_response.candidates[0].content.parts:
@@ -87,7 +91,6 @@ def run_gemini():
         except AttributeError:
             pass
     function_call = function_call[""]
-    print(function_call)
     add_bounding_boxes(function_call, worksheet_file_path, "temp/worksheet2.png")
 
 # bounding_boxes = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)

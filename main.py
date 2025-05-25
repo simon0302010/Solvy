@@ -1,4 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
+import base64
+import re
 
 app = Flask(__name__)
 
@@ -16,6 +18,15 @@ def home():
 @app.route('/scan')
 def scan():
     return render_template('scan.html')
+
+@app.route('/upload')
+def upload():
+    data = request.get_json()
+    image_data = data['image']
+    print(image_data)
+    # Remove the header part ("data:image/png;base64,")
+    image_data = re.sub('^data:image/.+;base64,', '', image_data)
+    image_binary = base64.b64decode(image_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
