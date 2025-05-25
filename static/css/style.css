@@ -1,41 +1,101 @@
 body {
     background-color: #1c1b1e;
     color: white;
+    padding-bottom: 100px; /* Kept the larger value for safety */
 }
+
 .top-bar {
     border-bottom: 3px solid #ff9aa2;
     text-align: center;
     margin-bottom: 20px;
+    padding-bottom: 10px; /* Added from latest input */
 }
+
 .btn-custom {
     background-color: #663c43;
     color: white;
     margin: 10px;
     border-radius: 12px;
+    padding: 10px 20px; /* More complete than previous */
 }
+
 .card-custom {
     background-color: #2e2c31;
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 15px;
 }
-.status {
+
+.status, .status-badge {
     color: #76ff76;
     font-weight: bold;
     float: right;
 }
+
 .bottom-nav {
     background-color: #2e2c31;
     position: fixed;
     bottom: 0;
     width: 100%;
-    padding: 10px 0;
+    padding: 8px 0;
+    display: flex;
+    justify-content: space-around;
+    border-top: 1px solid #444;
+    z-index: 999; /* Retained from earlier for layering */
 }
+
 .nav-icon {
     text-align: center;
-    color: white;
-    font-size: 12px;
+    font-size: 13px;
+    color: #bbb;
 }
+
 .nav-icon.active {
     color: #ff9aa2;
+}
+
+.nav-icon i {
+    font-size: 18px;
+    display: block;
+}
+
+.camera-area {
+    height: 70vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.camera-icon {
+    font-size: 6rem;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.text-small {
+    color: #666;
+}
+
+.scan-button {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: white;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    border: none;
+}
+
+a.text-success {
+    text-decoration: none;
 }
