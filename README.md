@@ -27,8 +27,13 @@
    cd Solvy
    ```
 2. **Install dependencies**
+   If you are using an NVIDIA GPU:
    ```bash
    pip install -r requirements.txt
+   ```
+   If you are using an non-NVIDIA GPU or a CPU:
+   ```bash
+   pip install -r requirements_cpu.txt
    ```
 3. **Configure the Gemini API key**
    ```python
