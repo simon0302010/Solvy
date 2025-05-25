@@ -4,33 +4,21 @@ from google.genai import types
 # ================= PROMPTS ================= #
 prompts = [
 """
-You are analyzing a worksheet image containing multiple empty fields that users must fill out.
-
-### Objective:
-Identify all input fields and ensure each one is enclosed in a single, correct bounding box.
-
-### Instructions:
-- Some fields already have bounding boxes (with numeric IDs and pixel coordinates).
-- If all fields are correctly represented, return them unchanged.
-- If any bounding boxes are:
-  - overlapping,
-  - duplicated (represent the same field multiple times),
-  - or missing,
-  then correct or infer their coordinates.
-- Use the spatial layout of the worksheet and existing boxes to guide your corrections.
-- In all cases, return a **complete list** of bounding boxes, including existing, corrected, and inferred ones.
-- The coordinates I will provide you with are in the format xmin, ymin, xmax, ymax.
-
-Please analyze the image and return the final bounding boxes using function calling.
-
-The bounding boxes on the image and the coordinates I will provide you with will ALWAYS match up.
-YOU ARE OBLIGTED TO USE FUNCTION CALLING EVEN JUST TO OUTPUT THE DATA I GAVE YOU BEFORE!
-YOU WILL DIE IF YOU DON'T RESPOND WITH A FUNCTION CALL!
-YOU ARE IN AN APP PLEASE COOPORARTE.
-
-
+I will provide you with an image that shows a worksheet with bounding boxes. I will also provide with
+the coordinates that belong to those bounding boxes. The bounding boxes should enclose the fields to write
+your answer on the worksheet.
+Your task is check if all bounding boxes are placed correctly. If they are, give me back their associated coordinates.
+If the bounding boxes are not placed correctly, remove the ones that are placed in the wrong spots.
+If some answer field do not have a bounding box, calculate their bounding box coordinates based on the coordinates I will provide you and add them to your function call.
+In that process you are allowed to add new bounding boxes but not change the location of existing bounding boxes.
+The only operation you are allowed to do on existing bounding boxes is remove them. YOU ARE PROHIBITED TO MOVE THEM IN ANY WAY!
+Use function calling for that.
 ONLY GIVE IT ONCE.
-These are the coordinates of the bounding boxes seen on the image:
+
+The coordinates I will provide you with are differently formatted than the ones you have to return.
+I will give you dictionary where each entry is associated to a list of 4 integers. These integers are in the order xmin, ymin, xmax, ymax.
+In addition to checking if the bounding boxes are placed correctly you also have to convert the coordinates I will provide you with into a format you can handle.
+Here are the coordinates that belong to the bounding boxes you can see in the image:
 
 """,
 """

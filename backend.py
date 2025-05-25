@@ -10,8 +10,9 @@ from run_inference import run_inference
 load_dotenv()
 
 # Define Variables
+#gemini_model = "gemini-2.5-flash-preview-05-20"
 gemini_model = "gemini-2.0-flash"
-worksheet_file_path = "test_worksheets/2.png"
+worksheet_file_path = "test_worksheets/4.jpg"
 temp_worksheet_file_path = "temp/worksheet.png"
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
@@ -74,9 +75,17 @@ def run_gemini():
         config=generate_content_config,
     )
     
+    print(gemini_prompts[0] + str(inference_result))
+
+    print(gemini_response)
+
     function_call = {}
-    for key, value in gemini_response.candidates[0].content.parts[0].function_call.args.items():
-        function_call[key[9:]] = value
+    for part in gemini_response.candidates[0].content.parts:
+        try:
+            for key, value in part.function_call.args.items():
+                function_call[key[9:]] = value
+        except AttributeError:
+            pass
     function_call = function_call[""]
     print(function_call)
     add_bounding_boxes(function_call, worksheet_file_path, "temp/worksheet2.png")

@@ -4,7 +4,7 @@ from ultralytics import YOLO
 import dataclasses
 from time import time
 
-model = YOLO("models/field_detect_2.pt")
+model = YOLO("models/field_detect_3.pt")
 
 def run_inference(image_path, output_image_path):
     start_time = time()
@@ -24,7 +24,6 @@ def run_inference(image_path, output_image_path):
         scene=annotated_image, detections=detections
     )
 
-    possible_labels = ['space']
     labels = []
     for i in range(len(detections)):
         labels.append(str(i))
