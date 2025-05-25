@@ -1,4 +1,8 @@
+**Simon:**
 ![Hackatime Time](https://hackatime-badge.hackclub.com/U08HC7N4JJW/Solvy)
+
+**Dwait:**
+![Hackatime Time](https://hackatime-badge.hackclub.com/U0847KFMUSC/Solvy)
 
 # Solvy
 
