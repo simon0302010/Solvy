@@ -4,6 +4,7 @@ __pycache__/
 example_with_bounding_boxes.jpg
 worksheet.png
 AI/
+temp/
 answer-fields-4/
 test.py
 image.png

@@ -69,7 +69,7 @@ def run_gemini():
     generate_content_config = types.GenerateContentConfig(
         tools=gemini_tools,
         response_mime_type="text/plain",
-        thinking_config=types.ThinkingConfig(thinking_budget=2048)
+        thinking_config=types.ThinkingConfig(thinking_budget=24576)
     )
 
     start_time = time()
