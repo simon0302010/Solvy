@@ -14,8 +14,9 @@
 
 ## 🛠 Requirements
 
+- Linux (requirements require modifications to work with other systems)
 - Python 3.11
-- An NVIDIA GPU (for local AI inference)
+- An NVIDIA GPU (for local AI inference) (optional)
 
 ---
 
@@ -27,10 +28,15 @@
    cd Solvy
    ```
 2. **Install dependencies**
+   If you are using an NVIDIA GPU:
    ```bash
    pip install -r requirements.txt
    ```
-3. **Configure the Gemini API key**
+   If you are using an non-NVIDIA GPU or a CPU:
+   ```bash
+   pip install -r requirements_cpu.txt
+   ```
+4. **Configure the Gemini API key**
    ```python
    GEMINI_API_KEY=your_gemini_api_key_here
    ```

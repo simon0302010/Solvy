@@ -3,9 +3,8 @@ google-genai
 dotenv
 Pillow
 flask
-torch==2.2.2 
-torchvision==0.17.2
-flash_attn @ https://github.com/Dao-AILab/flash-attention/releases/download/v2.7.3/flash_attn-2.7.3+cu11torch2.2cxx11abiFALSE-cp311-cp311-linux_x86_64.whl
+torch==2.2.2+cpu
+torchvision==0.17.2+cpu
 timm==1.0.14
 albumentations==2.0.4
 onnx==1.14.0
@@ -14,7 +13,6 @@ pycocotools==2.0.7
 PyYAML==6.0.1
 scipy==1.13.0
 onnxslim==0.1.31
-onnxruntime-gpu==1.18.0
 opencv-python==4.9.0.80
 huggingface-hub==0.23.2
 safetensors==0.4.3

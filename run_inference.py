@@ -52,4 +52,4 @@ def run_inference(image_path, output_image_path):
     return bounding_boxes_dict
 
 if __name__ == "__main__":
-    print(run_inference("test_worksheets/3.jpg", "image.png"))
+    print(run_inference("test_worksheets/2.png", "image.png"))
