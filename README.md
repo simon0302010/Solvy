@@ -14,8 +14,9 @@
 
 ## 🛠 Requirements
 
+- Linux (requirements require modifications to work with other systems)
 - Python 3.11
-- An NVIDIA GPU (for local AI inference)
+- An NVIDIA GPU (for local AI inference) (optional)
 
 ---
 
