@@ -6,18 +6,29 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from PIL import Image
-from run_inference import run_inference
 from time import time
 
 load_dotenv()
 
 # Define Variables
+inference = "local" # set inference either to roboflow or local
+try: inference = sys.argv[2]
+except IndexError: pass
 gemini_model = "gemini-2.5-flash-preview-05-20"
 #gemini_model = "gemini-2.0-flash"
-worksheet_file_path = f"test_worksheets/{sys.argv[1]}"
+worksheet_file_path = sys.argv[1]
 temp_worksheet_file_path = "temp/worksheet.png"
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
+
+if inference == "roboflow":
+    print("using roboflow inference")
+    import roboflow_inference
+elif inference == "local":
+    print("using local inference")
+    import local_inference
+else:
+    print('please set inference to either "roboflow" or "local"')
 
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -32,23 +43,28 @@ def add_bounding_boxes(bounding_box_data, image_path, output_filename):
     for idx, bounding_box in enumerate(bounding_box_data):
         start_point = int(bounding_box["xmin"]), int(bounding_box["ymin"])
         end_point = int(bounding_box["xmax"]), int(bounding_box["ymax"])
-        middle_point = int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2), int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
-        cv2.rectangle(image, start_point, end_point, color=(0,0,255), thickness=1)
+        middle_point = int(bounding_box["xmax"]) + 3, int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
+        cv2.rectangle(image, start_point, end_point, color=(83,0,135), thickness=2)
 
         cv2.putText(
             image,
-            str(idx),
+            str(idx + 1),
             middle_point,
             fontFace = cv2.FONT_HERSHEY_SIMPLEX,
             fontScale = 0.5,
-            color = (0,0,255),
-            thickness=2
+            color = (83,0,135),
+            thickness=1,
+            lineType=cv2.LINE_AA
         )
 
     cv2.imwrite(output_filename, image)
 
 def run_gemini():
-    inference_result = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
+    if inference == "roboflow":
+        inference_result_list, inference_result = roboflow_inference.run_inference(temp_worksheet_file_path)
+        add_bounding_boxes(inference_result_list, temp_worksheet_file_path, temp_worksheet_file_path)
+    elif inference == "local":
+        inference_result = local_inference.run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
     with open(temp_worksheet_file_path, "rb") as f:
         worksheet_bytes = f.read()
 
@@ -67,9 +83,10 @@ def run_gemini():
     ]
 
     generate_content_config = types.GenerateContentConfig(
+        temperature=0.5,
         tools=gemini_tools,
         response_mime_type="text/plain",
-        thinking_config=types.ThinkingConfig(thinking_budget=24576)
+        thinking_config=types.ThinkingConfig(thinking_budget=24576, include_thoughts=True)
     )
 
     start_time = time()
@@ -85,6 +102,10 @@ def run_gemini():
 
     function_call = {}
     for part in gemini_response.candidates[0].content.parts:
+        if part.thought:
+            print("Thought summary:")
+            print(part.text)
+            print()
         try:
             for key, value in part.function_call.args.items():
                 function_call[key[9:]] = value

@@ -17,7 +17,7 @@ ONLY GIVE IT ONCE.
 
 The coordinates I will provide you with are differently formatted than the ones you have to return.
 I will give you dictionary where each entry is associated to a list of 4 integers. These integers are in the order xmin, ymin, xmax, ymax.
-In addition to checking if the bounding boxes are placed correctly you also have to convert the coordinates I will provide you with into a format you can handle.
+The purple text besides the bounding box is an identifier for the box so you know which entry in the bounding box dictionary its boundaries corresponds to.
 Here are the coordinates that belong to the bounding boxes you can see in the image:
 
 """,

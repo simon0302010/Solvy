@@ -3,6 +3,7 @@ google-genai
 dotenv
 Pillow
 flask
+inference-sdk
 torch==2.2.2+cpu
 torchvision==0.17.2+cpu
 timm==1.0.14
