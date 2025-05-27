@@ -36,7 +36,8 @@
    ```bash
    pip install -r requirements_cpu.txt
    ```
-4. **Configure the Gemini API key**
+4. **Add your API keys**
    ```python
-   GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
+   ROBOFLOW_API_KEY=<YOUR_ROBOFLOW_API_KEY>
    ```
