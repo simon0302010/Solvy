@@ -1,4 +1,5 @@
 import cv2
+import base64
 import supervision as sv
 from ultralytics import YOLO
 import dataclasses
@@ -40,6 +41,8 @@ def run_inference(image_path, output_image_path):
             scene=annotated_image, detections=detections, labels=labels
         )
     cv2.imwrite(output_image_path, annotated_image)
+    _, buffer = cv2.imencode('.png', annotated_image)
+    annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
     
     bounding_boxes = dataclasses.fields(detections)[0]
     bounding_boxes = getattr(detections, bounding_boxes.name)
@@ -50,9 +53,10 @@ def run_inference(image_path, output_image_path):
             bounding_boxes_temp.append(round(int(temp_coordinate)))
         bounding_boxes_dict[str(idx + 1)] = (bounding_boxes_temp)
     print(f"local inference took {round(time() - start_time, 2)} seconds.")
-    return bounding_boxes_dict
+    return bounding_boxes_dict, annotated_image_base64
 
 if __name__ == "__main__":
-    inference_result = run_inference(sys.argv[1], "image.png")
+    inference_result, image_base64 = run_inference(sys.argv[1], "image.png")
     for bounding_box in inference_result:
         print(inference_result[bounding_box])
+    print(image_base64[:100])

@@ -1,6 +1,9 @@
 from inference_sdk import InferenceHTTPClient
-from dotenv import load_dotenv
 from time import time
+import supervision as sv
+import numpy as np
+import base64
+import cv2
 import sys
 import os
 
@@ -9,7 +12,7 @@ client = InferenceHTTPClient(
     api_key=os.getenv("ROBOFLOW_API_KEY")
 )
 
-def run_inference(image_path):
+def run_inference(image_path, output_image_path):
     start_time = time()
     result = client.run_workflow(
         workspace_name="simon0302010",
@@ -23,6 +26,7 @@ def run_inference(image_path):
     print(f"roboflow inference took {round(time() - start_time, 2)} seconds.")
     bounding_box_list = []
     bounding_box_dict = {}
+    bounding_box_array = []
     for idx, bounding_box in enumerate(result[0]["predictions"]["predictions"]):
         if bounding_box["confidence"] > 0.2:
             new_bounding_box = {}
@@ -37,9 +41,40 @@ def run_inference(image_path):
             new_bounding_box_list.append(new_bounding_box["xmax"])
             new_bounding_box_list.append(new_bounding_box["ymax"])
             bounding_box_dict[str(idx + 1)] = new_bounding_box_list
-    return(bounding_box_list, bounding_box_dict)
+    for bounding_box in bounding_box_dict:
+        bounding_box_array.append(bounding_box_dict[bounding_box])
+    bounding_box_array = np.array(bounding_box_array)
+    
+    image = cv2.imread(image_path)
+
+    bounding_box_annotator = sv.BoxAnnotator()
+    label_annotator = sv.LabelAnnotator(text_position=sv.Position.CENTER_RIGHT, text_scale=0.4, text_padding=2)
+
+    detections = sv.Detections(
+        xyxy=bounding_box_array,
+        class_id=np.zeros((len(bounding_box_array),), dtype=int)
+    )
+
+    annotated_image = bounding_box_annotator.annotate(
+        scene=image.copy(), detections=detections
+    )
+
+    labels = []
+    for i in range(len(detections)):
+        labels.append(str(i + 1))
+
+    if labels:
+        annotated_image = label_annotator.annotate(
+            scene=annotated_image, detections=detections, labels=labels
+        )
+
+    cv2.imwrite(output_image_path, annotated_image)
+    _, buffer = cv2.imencode('.png', annotated_image)
+    annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
+    return bounding_box_dict, annotated_image_base64
 
 if __name__ == "__main__":
-    bounding_box_list, bounding_box_dict = run_inference(sys.argv[1])
-    for bounding_box in bounding_box_dict:
-        print(bounding_box_dict[bounding_box])
+    inference_result, image_base64 = run_inference(sys.argv[1], "image.png")
+    for bounding_box in inference_result:
+        print(inference_result[bounding_box])
+    print(image_base64[:100])

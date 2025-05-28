@@ -23,10 +23,10 @@ gemini_tools = extra_data.tools
 
 if inference == "roboflow":
     print("using roboflow inference")
-    import roboflow_inference
+    from roboflow_inference import run_inference
 elif inference == "local":
     print("using local inference")
-    import local_inference
+    from local_inference import run_inference
 else:
     print('please set inference to either "roboflow" or "local"')
 
@@ -60,13 +60,9 @@ def add_bounding_boxes(bounding_box_data, image_path, output_filename):
     cv2.imwrite(output_filename, image)
 
 def run_gemini():
-    if inference == "roboflow":
-        inference_result_list, inference_result = roboflow_inference.run_inference(temp_worksheet_file_path)
-        add_bounding_boxes(inference_result_list, temp_worksheet_file_path, temp_worksheet_file_path)
-    elif inference == "local":
-        inference_result = local_inference.run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
-    with open(temp_worksheet_file_path, "rb") as f:
-        worksheet_bytes = f.read()
+    inference_result, image_base64 = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
+    #with open(temp_worksheet_file_path, "rb") as f:
+    #    worksheet_bytes = f.read()
 
     gemini_contents = [
         types.Content(
@@ -74,7 +70,7 @@ def run_gemini():
             parts=[
                 types.Part.from_bytes(
                     mime_type="image/png",
-                    data=worksheet_bytes
+                    data=image_base64
                 ),
                 types.Part.from_text(text=(gemini_prompts[0] + str(inference_result))),
                 #types.Part.from_text(text="Create these bounding boxes: " + str(inference_result)),
