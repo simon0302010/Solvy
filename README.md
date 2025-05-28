@@ -28,7 +28,7 @@
    cd Solvy
    ```
 2. **Install dependencies**
-
+   
    If you are using an NVIDIA GPU:
    ```bash
    pip install -r requirements.txt
