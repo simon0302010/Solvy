@@ -1,6 +1,12 @@
 from flask import Flask, render_template, request
 import base64
 import re
+import os
+
+try:
+    port = os.getenv("PORT")
+except:
+    port = 5000
 
 app = Flask(__name__)
 
@@ -29,4 +35,4 @@ def upload():
     image_binary = base64.b64decode(image_data)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=port)
