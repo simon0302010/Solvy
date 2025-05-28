@@ -3,6 +3,7 @@ google-genai
 dotenv
 Pillow
 flask
+gunicorn
 inference-sdk
 torch==2.2.2 
 torchvision==0.17.2
