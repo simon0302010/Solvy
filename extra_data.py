@@ -12,6 +12,7 @@ If the bounding boxes are not placed correctly, remove the ones that are placed 
 If some answer field do not have a bounding box, calculate their bounding box coordinates based on the coordinates I will provide you and add them to your function call.
 In that process you are allowed to add new bounding boxes but not change the location of existing bounding boxes.
 The only operation you are allowed to do on existing bounding boxes is remove them. YOU ARE PROHIBITED TO MOVE THEM IN ANY WAY!
+Do not add a padding to the boxes.
 Use function calling for that.
 ONLY GIVE IT ONCE.
 

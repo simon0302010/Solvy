@@ -12,7 +12,7 @@ client = InferenceHTTPClient(
     api_key=os.getenv("ROBOFLOW_API_KEY")
 )
 
-def run_inference(image_path, output_image_path):
+def run_inference(image_path): #, output_image_path):
     start_time = time()
     result = client.run_workflow(
         workspace_name="simon0302010",
@@ -68,13 +68,13 @@ def run_inference(image_path, output_image_path):
             scene=annotated_image, detections=detections, labels=labels
         )
 
-    cv2.imwrite(output_image_path, annotated_image)
+    #cv2.imwrite(output_image_path, annotated_image)
     _, buffer = cv2.imencode('.png', annotated_image)
     annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
     return bounding_box_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":
-    inference_result, image_base64 = run_inference(sys.argv[1], "image.png")
+    inference_result, image_base64 = run_inference(sys.argv[1]) #, "image.png")
     for bounding_box in inference_result:
         print(inference_result[bounding_box])
     print(image_base64[:100])

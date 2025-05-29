@@ -8,7 +8,7 @@ from time import time
 
 model = YOLO("models/field_detect_3.pt")
 
-def run_inference(image_path, output_image_path):
+def run_inference(image_path): #, output_image_path):
     start_time = time()
     image = cv2.imread(image_path)
 
@@ -40,7 +40,7 @@ def run_inference(image_path, output_image_path):
         annotated_image = label_annotator.annotate(
             scene=annotated_image, detections=detections, labels=labels
         )
-    cv2.imwrite(output_image_path, annotated_image)
+    #cv2.imwrite(output_image_path, annotated_image)
     _, buffer = cv2.imencode('.png', annotated_image)
     annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
     
@@ -56,7 +56,7 @@ def run_inference(image_path, output_image_path):
     return bounding_boxes_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":
-    inference_result, image_base64 = run_inference(sys.argv[1], "image.png")
+    inference_result, image_base64 = run_inference(sys.argv[1]) #, "image.png")
     for bounding_box in inference_result:
         print(inference_result[bounding_box])
     print(image_base64[:100]) 
