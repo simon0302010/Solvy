@@ -71,7 +71,7 @@ def run_inference(image_path, output_image_path):
     cv2.imwrite(output_image_path, annotated_image)
     _, buffer = cv2.imencode('.png', annotated_image)
     annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
-    return bounding_box_dict, annotated_image_base64
+    return bounding_box_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":
     inference_result, image_base64 = run_inference(sys.argv[1], "image.png")

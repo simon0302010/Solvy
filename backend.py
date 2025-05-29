@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from PIL import Image
-from time import time
+import time
 
 load_dotenv()
 
@@ -63,6 +63,7 @@ def run_gemini():
     inference_result, image_base64 = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
     #with open(temp_worksheet_file_path, "rb") as f:
     #    worksheet_bytes = f.read()
+    #print(worksheet_bytes[:100])
 
     gemini_contents = [
         types.Content(
@@ -85,13 +86,24 @@ def run_gemini():
         thinking_config=types.ThinkingConfig(thinking_budget=24576, include_thoughts=True)
     )
 
-    start_time = time()
-    gemini_response = gemini_client.models.generate_content(
-        model=gemini_model,
-        contents=gemini_contents,
-        config=generate_content_config,
-    )
-    print(f"gemini took {round(time() - start_time, 2)} seconds.")
+    while True:
+        try:
+            start_time = time.time()
+            gemini_response = gemini_client.models.generate_content(
+                model=gemini_model,
+                contents=gemini_contents,
+                config=generate_content_config,
+            )
+            break
+        except Exception as e:
+            if "500" in str(e):
+                print("Internal server error, retrying...")
+                time.sleep(2)
+            else:
+                raise
+                
+
+    print(f"gemini took {round(time.time() - start_time, 2)} seconds.")
     
     print("Thoughts tokens:",gemini_response.usage_metadata.thoughts_token_count)
     print("Output tokens:",gemini_response.usage_metadata.candidates_token_count)

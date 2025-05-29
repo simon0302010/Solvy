@@ -53,10 +53,10 @@ def run_inference(image_path, output_image_path):
             bounding_boxes_temp.append(round(int(temp_coordinate)))
         bounding_boxes_dict[str(idx + 1)] = (bounding_boxes_temp)
     print(f"local inference took {round(time() - start_time, 2)} seconds.")
-    return bounding_boxes_dict, annotated_image_base64
+    return bounding_boxes_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":
     inference_result, image_base64 = run_inference(sys.argv[1], "image.png")
     for bounding_box in inference_result:
         print(inference_result[bounding_box])
-    print(image_base64[:100])
+    print(image_base64[:100]) 
