@@ -14,9 +14,10 @@
         <div class="top-bar text-center">
             <h2 class="fw-bold">Home</h2>
             <div class="d-flex justify-content-center">
-                <a href="/scan">
-                    <button class="btn btn-custom"><i class="bi bi-camera"></i> Scan</button>
-                </a>
+                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+                <button class="btn btn-custom" onclick="document.getElementById('cameraInput').click()">
+                    <i class="bi bi-camera"></i> Scan
+                </button>
                 <button class="btn btn-custom"><i class="bi bi-upload"></i> Upload</button>
             </div>
         </div>
@@ -51,5 +52,15 @@
             Settings
         </a>
     </div>
+<script>
+document.getElementById('cameraInput').onchange = function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const formData = new FormData();
+        formData.append('image', file);
+        fetch('/upload', { method: 'POST', body: formData });
+    }
+};
+</script>
 </body>
 </html>

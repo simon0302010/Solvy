@@ -25,15 +25,23 @@ def home():
 def scan():
     return render_template('scan.html')
 
-@app.route('/upload')
+@app.route('/upload', methods=['POST'])
 def upload():
-    data = request.get_json()
-    image_data = data['image']
-    print(image_data)
-    # Remove the header part ("data:image/png;base64,")
-    image_data = re.sub('^data:image/.+;base64,', '', image_data)
-    image_binary = base64.b64decode(image_data)
-    print(image_binary)
+    if 'image' not in request.files:
+        return {'error': 'No image file'}, 400
+    
+    file = request.files['image']
+    if file.filename == '':
+        return {'error': 'No file selected'}, 400
+
+    image_binary = file.read()
+
+    with open("image.png", "wb") as f:
+        f.write(image_binary)
+
+    print(f"Received image: {len(image_binary)} bytes")
+
+    return {'success': True, 'message': 'Image uploaded successfully'}
 
 if __name__ == '__main__':
     app.run(debug=True, port=port)
