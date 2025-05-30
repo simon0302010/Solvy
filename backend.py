@@ -6,7 +6,7 @@ import extra_data
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from colorama import Fore
+from logger import *
 from PIL import Image
 
 load_dotenv()
@@ -20,14 +20,16 @@ worksheet_file_path = sys.argv[1]
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
 
+print_info(f"using {gemini_model}")
+
 if inference == "roboflow":
-    print(Fore.BLUE + "using roboflow inference")
+    print_info("using roboflow inference")
     from roboflow_inference import run_inference
 elif inference == "local":
-    print(Fore.BLUE + "using local inference")
+    print_info("using local inference")
     from local_inference import run_inference
 else:
-    print(Fore.RED + 'please set inference to either "roboflow" or "local"')
+    print_fail('please set inference to either "roboflow" or "local"')
     exit()
 
 # Initialize Gemini Client
@@ -36,7 +38,7 @@ gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 worksheet_file = Image.open(worksheet_file_path)
 new_worksheet_file_path = os.path.splitext(worksheet_file_path)[0] + ".png"
 if not worksheet_file_path == new_worksheet_file_path:
-    print(Fore.YELLOW + "input worksheet is not in png format, converting...")
+    print_warn("input worksheet is not in png format, converting...")
     os.remove(worksheet_file_path)
     worksheet_file.save(new_worksheet_file_path)
 
@@ -84,6 +86,7 @@ def run_gemini():
 
     generate_content_config = types.GenerateContentConfig(
         temperature=0.5,
+        candidate_count=1,
         tools=gemini_tools,
         response_mime_type="text/plain",
         thinking_config=types.ThinkingConfig(thinking_budget=24576, include_thoughts=True)
@@ -100,21 +103,21 @@ def run_gemini():
             break
         except Exception as e:
             if ("500" or "502" or "503") in str(e):
-                print(Fore.YELLOW + "Internal server error, retrying...")
+                print_warn("Internal server error, retrying...")
                 time.sleep(2)
             else:
                 raise
                 
 
-    print(Fore.GREEN + f"gemini took {round(time.time() - start_time, 2)} seconds.")
+    print_success(f"gemini took {round(time.time() - start_time, 2)} seconds.")
     
-    print(Fore.BLUE + "Thoughts tokens:", gemini_response.usage_metadata.thoughts_token_count)
-    print(Fore.BLUE + "Output tokens:", gemini_response.usage_metadata.candidates_token_count)
+    print_info("Thoughts tokens: " + str(gemini_response.usage_metadata.thoughts_token_count))
+    print_info("Output tokens: " + str(gemini_response.usage_metadata.candidates_token_count))
 
     function_call = {}
     for part in gemini_response.candidates[0].content.parts:
         if part.thought:
-            print(Fore.BLUE + "Thought summary: " + Fore.WHITE + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a 50 word summary: {part.text}").text.strip())
+            print_info("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
         try:
             for key, value in part.function_call.args.items():
                 function_call[key[9:]] = value

@@ -1,6 +1,6 @@
 from inference_sdk import InferenceHTTPClient
-from colorama import Fore
 from time import time
+from logger import *
 import supervision as sv
 import numpy as np
 import base64
@@ -24,7 +24,7 @@ def run_inference(image_path): #, output_image_path):
         use_cache=True # cache workflow definition for 15 minutes
     )
 
-    print(Fore.GREEN + f"roboflow inference took {round(time() - start_time, 2)} seconds.")
+    print_success(f"roboflow inference took {round(time() - start_time, 2)} seconds.")
     bounding_box_list = []
     bounding_box_dict = {}
     bounding_box_array = []
@@ -47,7 +47,8 @@ def run_inference(image_path): #, output_image_path):
     bounding_box_array = np.array(bounding_box_array)
     
     if len(bounding_box_array) == 0:
-        raise("no empty fields found")
+        print_fail("no empty fields found")
+        exit()
 
     image = cv2.imread(image_path)
 

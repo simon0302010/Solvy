@@ -4,7 +4,6 @@ dotenv
 Pillow
 flask
 gunicorn
-colorama
 inference-sdk
 torch==2.2.2 
 torchvision==0.17.2

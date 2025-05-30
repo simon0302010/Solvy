@@ -14,6 +14,7 @@ In that process you are allowed to add new bounding boxes but not change the loc
 The only operation you are allowed to do on existing bounding boxes is remove them. YOU ARE PROHIBITED TO MOVE THEM IN ANY WAY!
 Do not add a padding to the boxes.
 Use function calling for that.
+The answer fields are rarely aligned in a perfect grid.
 ONLY GIVE IT ONCE.
 
 The coordinates I will provide you with are differently formatted than the ones you have to return.
