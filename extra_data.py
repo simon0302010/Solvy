@@ -15,7 +15,7 @@ The only operation you are allowed to do on existing bounding boxes is remove th
 Do not add a padding to the boxes.
 Use function calling for that.
 The answer fields are rarely aligned in a perfect grid.
-ONLY GIVE IT ONCE.
+Please return the bounding boxes in the same order as the tasks on the worksheet.
 
 The coordinates I will provide you with are differently formatted than the ones you have to return.
 I will give you dictionary where each entry is associated to a list of 4 integers. These integers are in the order xmin, ymin, xmax, ymax.

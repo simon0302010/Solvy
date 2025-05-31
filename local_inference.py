@@ -5,14 +5,15 @@ from ultralytics import YOLO
 from yaspin import yaspin
 import dataclasses
 import sys
+import numpy as np
 from logger import *
 from time import time
 
 model = YOLO("models/field_detect_3.pt")
 
-def run_inference(image_path): #, output_image_path):
-    start_time = time()
-    image = cv2.imread(image_path)
+def run_inference(image_bytes): #, output_image_path):
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     with yaspin(text="Detecting bounding boxes", color="green") as sp:
         results = model(image)[0]
@@ -61,11 +62,15 @@ def run_inference(image_path): #, output_image_path):
         for temp_coordinate in bounding_box.tolist():
             bounding_boxes_temp.append(round(int(temp_coordinate)))
         bounding_boxes_dict[str(idx + 1)] = (bounding_boxes_temp)
-    #print_success(f"local inference took {round(time() - start_time, 2)} seconds.")
     return bounding_boxes_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":
-    inference_result, image_base64 = run_inference(sys.argv[1]) #, "image.png")
+    with open(sys.argv[1], "rb") as f:
+        image_bytes = f.read()
+
+    inference_result, image_base64 = run_inference(image_bytes) #, "image.png")
     for bounding_box in inference_result:
         print(inference_result[bounding_box])
-    print(image_base64[:100]) 
+    
+    with open("image.png", "wb") as f:
+        f.write(image_base64)

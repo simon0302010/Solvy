@@ -14,14 +14,14 @@ client = InferenceHTTPClient(
     api_key=os.getenv("ROBOFLOW_API_KEY")
 )
 
-def run_inference(image_path): #, output_image_path):
-    start_time = time()
+def run_inference(image_bytes): #, output_image_path):
+    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
     with yaspin(text="Detecting bounding boxes", color="green") as sp:
         result = client.run_workflow(
             workspace_name="simon0302010",
             workflow_id="custom-workflow",
             images={
-                "image": image_path
+                "image": image_base64
             },
             use_cache=True # cache workflow definition for 15 minutes
         )
@@ -32,7 +32,6 @@ def run_inference(image_path): #, output_image_path):
             sp.fail("[✖]")
             exit()
 
-    #print_success(f"roboflow inference took {round(time() - start_time, 2)} seconds.")
     bounding_box_list = []
     bounding_box_dict = {}
     bounding_box_array = []
@@ -54,7 +53,8 @@ def run_inference(image_path): #, output_image_path):
         bounding_box_array.append(bounding_box_dict[bounding_box])
     bounding_box_array = np.array(bounding_box_array)
 
-    image = cv2.imread(image_path)
+    image_array = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
 
     bounding_box_annotator = sv.BoxAnnotator()
     label_annotator = sv.LabelAnnotator(text_position=sv.Position.CENTER_RIGHT, text_scale=0.4, text_padding=2)
@@ -83,7 +83,12 @@ def run_inference(image_path): #, output_image_path):
     return bounding_box_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":
-    inference_result, image_base64 = run_inference(sys.argv[1]) #, "image.png")
+    with open(sys.argv[1], "rb") as f:
+        image_bytes = f.read()
+
+    inference_result, image_base64 = run_inference(image_bytes) #, "image.png")
     for bounding_box in inference_result:
         print(inference_result[bounding_box])
-    print(image_base64[:100])
+    
+    with open("image.png", "wb") as f:
+        f.write(image_base64)
