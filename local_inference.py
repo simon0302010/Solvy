@@ -2,6 +2,7 @@ import cv2
 import base64
 import supervision as sv
 from ultralytics import YOLO
+from yaspin import yaspin
 import dataclasses
 import sys
 from logger import *
@@ -13,14 +14,17 @@ def run_inference(image_path): #, output_image_path):
     start_time = time()
     image = cv2.imread(image_path)
 
-    results = model(image)[0]
-    detections = sv.Detections.from_ultralytics(results)
+    with yaspin(text="Detecting bounding boxes", color="green") as sp:
+        results = model(image)[0]
+        detections = sv.Detections.from_ultralytics(results)
+        detections = detections.with_nms(threshold=0.5)
+        #sp.write("> " + str(len(detections)) + " bounding boxes found.")
+        if len(detections) > 0:
+            sp.ok("[✔]")
+        else:
+            sp.fail("[✖]")
+            exit()
 
-    detections = detections.with_nms(threshold=0.5)
-
-    if len(detections) == 0:
-        print_fail("no empty fields found")
-        exit()
 
     bounding_box_annotator = sv.BoxAnnotator()
     label_annotator = sv.LabelAnnotator(text_position=sv.Position.CENTER_RIGHT, text_scale=0.4, text_padding=2)
@@ -57,7 +61,7 @@ def run_inference(image_path): #, output_image_path):
         for temp_coordinate in bounding_box.tolist():
             bounding_boxes_temp.append(round(int(temp_coordinate)))
         bounding_boxes_dict[str(idx + 1)] = (bounding_boxes_temp)
-    print_success(f"local inference took {round(time() - start_time, 2)} seconds.")
+    #print_success(f"local inference took {round(time() - start_time, 2)} seconds.")
     return bounding_boxes_dict, base64.b64decode(annotated_image_base64)
 
 if __name__ == "__main__":

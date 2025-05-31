@@ -1,5 +1,6 @@
 from inference_sdk import InferenceHTTPClient
 from time import time
+from yaspin import yaspin
 from logger import *
 import supervision as sv
 import numpy as np
@@ -15,16 +16,23 @@ client = InferenceHTTPClient(
 
 def run_inference(image_path): #, output_image_path):
     start_time = time()
-    result = client.run_workflow(
-        workspace_name="simon0302010",
-        workflow_id="custom-workflow",
-        images={
-            "image": image_path
-        },
-        use_cache=True # cache workflow definition for 15 minutes
-    )
+    with yaspin(text="Detecting bounding boxes", color="green") as sp:
+        result = client.run_workflow(
+            workspace_name="simon0302010",
+            workflow_id="custom-workflow",
+            images={
+                "image": image_path
+            },
+            use_cache=True # cache workflow definition for 15 minutes
+        )
+        #sp.write("> " + str(len(result[0]["predictions"]["predictions"])) + " bounding boxes found.")
+        if len(result[0]["predictions"]["predictions"]) > 0:
+            sp.ok("[✔]")
+        else:
+            sp.fail("[✖]")
+            exit()
 
-    print_success(f"roboflow inference took {round(time() - start_time, 2)} seconds.")
+    #print_success(f"roboflow inference took {round(time() - start_time, 2)} seconds.")
     bounding_box_list = []
     bounding_box_dict = {}
     bounding_box_array = []
@@ -45,10 +53,6 @@ def run_inference(image_path): #, output_image_path):
     for bounding_box in bounding_box_dict:
         bounding_box_array.append(bounding_box_dict[bounding_box])
     bounding_box_array = np.array(bounding_box_array)
-    
-    if len(bounding_box_array) == 0:
-        print_fail("no empty fields found")
-        exit()
 
     image = cv2.imread(image_path)
 

@@ -8,6 +8,7 @@ from google import genai
 from google.genai import types
 from logger import *
 from PIL import Image
+from yaspin import yaspin
 
 load_dotenv()
 
@@ -20,16 +21,16 @@ worksheet_file_path = sys.argv[1]
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
 
-print_info(f"using {gemini_model}")
+print_info(f"Using {gemini_model}")
 
 if inference == "roboflow":
-    print_info("using roboflow inference")
+    print_info("Using Roboflow inference")
     from roboflow_inference import run_inference
 elif inference == "local":
-    print_info("using local inference")
+    print_info("Using Local inference")
     from local_inference import run_inference
 else:
-    print_fail('please set inference to either "roboflow" or "local"')
+    print_fail('Please set inference to either "roboflow" or "local"')
     exit()
 
 # Initialize Gemini Client
@@ -38,7 +39,7 @@ gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 worksheet_file = Image.open(worksheet_file_path)
 new_worksheet_file_path = os.path.splitext(worksheet_file_path)[0] + ".png"
 if not worksheet_file_path == new_worksheet_file_path:
-    print_warn("input worksheet is not in png format, converting...")
+    print_warn("Input worksheet is not in png format, converting...")
     os.remove(worksheet_file_path)
     worksheet_file.save(new_worksheet_file_path)
 
@@ -92,32 +93,34 @@ def run_gemini():
         thinking_config=types.ThinkingConfig(thinking_budget=24576, include_thoughts=True)
     )
 
-    while True:
-        try:
-            start_time = time.time()
-            gemini_response = gemini_client.models.generate_content(
-                model=gemini_model,
-                contents=gemini_contents,
-                config=generate_content_config,
-            )
-            break
-        except Exception as e:
-            if ("500" or "502" or "503") in str(e):
-                print_warn("Internal server error, retrying...")
-                time.sleep(2)
-            else:
-                raise
-                
-
-    print_success(f"gemini took {round(time.time() - start_time, 2)} seconds.")
-    
+    with yaspin(text="Fixing misplaced bounding boxes", color="green") as sp:
+        while True:
+            try:
+                start_time = time.time()
+                gemini_response = gemini_client.models.generate_content(
+                    model=gemini_model,
+                    contents=gemini_contents,
+                    config=generate_content_config,
+                )
+                sp.ok("[✔]")
+                break
+            except Exception as e:
+                if ("500" or "502" or "503") in str(e):
+                    sp.write("> Internal server error, retrying...")
+                    time.sleep(2)
+                else:
+                    raise
+                    
     print_info("Thoughts tokens: " + str(gemini_response.usage_metadata.thoughts_token_count))
     print_info("Output tokens: " + str(gemini_response.usage_metadata.candidates_token_count))
 
     function_call = {}
     for part in gemini_response.candidates[0].content.parts:
         if part.thought:
-            print_info("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
+            with yaspin(text="Generating thought summary", color="green") as sp:
+                thought_summary = ("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
+                sp.ok("[✔]")
+            print_info(thought_summary)
         try:
             for key, value in part.function_call.args.items():
                 function_call[key[9:]] = value

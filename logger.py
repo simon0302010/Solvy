@@ -10,13 +10,13 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def print_warn(text):
-    print(bcolors.WARNING + "[WARNING] " + bcolors.ENDC + text)
+    print(bcolors.WARNING + "[!] " + bcolors.ENDC + text)
 
 def print_info(text):
-    print(bcolors.OKBLUE + "[INFO] " + bcolors.ENDC + text)
+    print(bcolors.OKBLUE + "[ℹ] " + bcolors.ENDC + text)
 
 def print_success(text):
-    print(bcolors.OKGREEN + "[SUCCESS] " + bcolors.ENDC + text)
+    print(bcolors.OKGREEN + "[✔] " + bcolors.ENDC + text)
 
 def print_fail(text):
-    print(bcolors.FAIL + "[FAIL] " + bcolors.ENDC + text)
+    print(bcolors.FAIL + "[✖] " + bcolors.ENDC + text)
