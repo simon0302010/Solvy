@@ -1,0 +1,7 @@
+{
+    "name": "Solvy",
+    "short_name": "Solvy",
+    "display": "standalone",
+    "scope": "/",
+    "start_url": "/"
+}
