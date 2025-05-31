@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from logger import *
+import backend
 import base64
 import re
 import os
@@ -50,12 +51,11 @@ def upload():
     if file.filename == '':
         return {'error': 'No file selected'}, 400
 
-    image_binary = file.read()
+    image_bytes = file.read()
 
-    with open("image.png", "wb") as f:
-        f.write(image_binary)
-
-    print_info(f"Received image: {len(image_binary)} bytes")
+    print_info(f"Received image: {len(image_bytes)} bytes")
+    print_info("Beginning to process image")
+    backend.process_image(image_bytes)
 
     return {'success': True, 'message': 'Image uploaded successfully'}
 

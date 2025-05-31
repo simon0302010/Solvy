@@ -11,15 +11,18 @@ from time import time
 
 model = YOLO("models/field_detect_3.pt")
 
-def run_inference(image_bytes): #, output_image_path):
+def run_inference(image_bytes):
     nparr = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    cv2.imshow("image", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     with yaspin(text="Detecting bounding boxes", color="green") as sp:
         results = model(image)[0]
         detections = sv.Detections.from_ultralytics(results)
         detections = detections.with_nms(threshold=0.5)
-        #sp.write("> " + str(len(detections)) + " bounding boxes found.")
         if len(detections) > 0:
             sp.ok("[✔]")
         else:

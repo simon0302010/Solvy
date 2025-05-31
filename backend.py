@@ -4,11 +4,12 @@ import time
 import extra_data
 import click
 import numpy as np
+import io
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from logger import *
-from PIL import Image
+from PIL import Image, ImageOps
 from yaspin import yaspin
 
 load_dotenv()
@@ -31,12 +32,21 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-#worksheet_file = Image.open(worksheet_file_path)
-#new_worksheet_file_path = os.path.splitext(worksheet_file_path)[0] + ".png"
-#if not worksheet_file_path == new_worksheet_file_path:
-#    print_warn("Input worksheet is not in png format, converting...")
-#    os.remove(worksheet_file_path)
-#    worksheet_file.save(new_worksheet_file_path)
+def prepare_image(image_bytes, max_dim=1024):
+    # Open image and fix orientation
+    image = Image.open(io.BytesIO(image_bytes))
+    image = ImageOps.exif_transpose(image)
+
+    # Resize if needed
+    w, h = image.size
+    scale = min(max_dim / h, max_dim / w, 1.0)
+    if scale < 1.0:
+        image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
+    # Convert to PNG bytes
+    output = io.BytesIO()
+    image.save(output, format="PNG")
+    return output.getvalue()
 
 # Function to add bounding boxes to any image
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
@@ -63,6 +73,7 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     return image
 
 def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
+    image_bytes = prepare_image(image_bytes)
     nparr = np.frombuffer(image_bytes, np.uint8)
     image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
@@ -127,10 +138,12 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     annotated_image = add_bounding_boxes(function_call, image_opencv) #, "solved_worksheet.png")
     
     #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True):
-    if True:
+    if False:
         cv2.imshow("annotated image", annotated_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+    return annotated_image
 
 #contents = [
 #    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
