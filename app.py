@@ -15,10 +15,25 @@ app = Flask(__name__)
 def home():
     # Sample data to simulate scanned questions
     questions = [{
-        'type': 'Question Title',
-        'status': 'Status',
-        'description': 'You scanned a question. The AI solved it with this discription.'
-    }] * 4  # Repeat 4 times for demo
+    'type': 'Algebra - Solving Equations',
+    'status': 'Solved',
+    'description': 'You scanned a worksheet: Solve for x in the equation 3x - 7 = 11.'
+}, {
+    'type': 'Geometry - Angles in Triangles',
+    'status': 'Solved',
+    'description': 'You scanned a worksheet: Find the missing angle in a triangle if the other two are 45° and 65°.'
+}, {
+    'type': 'Linear Equations - Word Problem',
+    'status': 'Solved',
+    'description': 'Sarah is twice as old as John. Together, their ages add up to 36. How old is each?'
+}, {
+    'type': 'Quadratic Equations - Factoring',
+    'status': 'Solved',
+    'description': 'You scanned a question: Factor the quadratic equation x² - 5x + 6 = 0.'
+}]
+
+
+    print(questions)
 
     return render_template('home.html', questions=questions)
 
