@@ -12,12 +12,12 @@
 <body>
 
     <div class="container text-center camera-area">
-        <i class="bi bi-camera-fill camera-icon"></i>
-        <p class="text-small">Tap the scan button below to capture a question</p>
+        <video id="camera" autoplay playsinline></video>
+        <p class="text-small">Tap the scan button to capture a question</p>
     </div>
 
     <!-- Floating Scan Button -->
-    <button class="scan-button">
+    <button class="scan-button" onclick="captureImage()">
         <i class="bi bi-camera"></i>
     </button>
 
@@ -40,6 +40,56 @@
             Settings
         </a>
     </div>
+
+    <!-- Hidden canvas for capture -->
+    <canvas id="canvas" style="display:none;"></canvas>
+    <input type="image" src="" id="camera-image" style="display: none;">
+
+    <script>
+        const video = document.getElementById('camera');
+        const canvas = document.getElementById('canvas');
+
+        // Start camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Camera access denied:", err);
+                alert("Please allow camera access to scan questions.");
+            });
+
+        // Capture image from video
+        function captureImage() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 120, 120, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/png');
+            console.log("Captured image data URL:");
+            console.log(imageData);
+            document.getElementById("camera-image").src=imageData
+            document.getElementById("camera-image").style.display="block";
+            console.log("\n\n\nCamera-Image:"+document.getElementById("camera-image").getAttribute('src'));
+
+            fetch('/upload', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData }) // imageData is your base64 string
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Server response:", data);
+            })
+            .catch(error => {
+                console.error("Error uploading image:", error);
+            });
+            
+        }
+    </script>
 
 </body>
 </html>

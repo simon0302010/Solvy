@@ -79,7 +79,7 @@ body {
 
 .scan-button {
     position: fixed;
-    bottom: 80px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
@@ -99,3 +99,4 @@ body {
 a.text-success {
     text-decoration: none;
 }
+

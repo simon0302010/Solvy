@@ -1,54 +1,76 @@
 import os
+import sys
 import cv2
+import time
 import extra_data
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from logger import *
 from PIL import Image
-from run_inference import run_inference
+from yaspin import yaspin
 
 load_dotenv()
 
 # Define Variables
-#gemini_model = "gemini-2.5-flash-preview-05-20"
-gemini_model = "gemini-2.0-flash"
-worksheet_file_path = "test_worksheets/4.jpg"
-temp_worksheet_file_path = "temp/worksheet.png"
+inference = "roboflow" # set inference either to roboflow or local
+try: inference = sys.argv[2]
+except IndexError: pass
+gemini_model = "gemini-2.5-flash-preview-05-20"
+worksheet_file_path = sys.argv[1]
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
+
+print_info(f"Using {gemini_model}")
+
+if inference == "roboflow":
+    print_info("Using Roboflow inference")
+    from roboflow_inference import run_inference
+elif inference == "local":
+    print_info("Using Local inference")
+    from local_inference import run_inference
+else:
+    print_fail('Please set inference to either "roboflow" or "local"')
+    exit()
 
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 worksheet_file = Image.open(worksheet_file_path)
-worksheet_file.save(temp_worksheet_file_path)
+new_worksheet_file_path = os.path.splitext(worksheet_file_path)[0] + ".png"
+if not worksheet_file_path == new_worksheet_file_path:
+    print_warn("Input worksheet is not in png format, converting...")
+    os.remove(worksheet_file_path)
+    worksheet_file.save(new_worksheet_file_path)
 
 # Function to add bounding boxes to any image
-def add_bounding_boxes(bounding_box_data, image_path, output_filename):
+def add_bounding_boxes(bounding_box_data, image_path, output_filename=None):
     image = cv2.imread(image_path)
 
     for idx, bounding_box in enumerate(bounding_box_data):
         start_point = int(bounding_box["xmin"]), int(bounding_box["ymin"])
         end_point = int(bounding_box["xmax"]), int(bounding_box["ymax"])
-        middle_point = int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2), int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
-        cv2.rectangle(image, start_point, end_point, color=(0,0,255), thickness=1)
+        #middle_point = int(bounding_box["xmax"]) + 3, int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
+        middle_point = int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2) - 7, int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
+        cv2.rectangle(image, start_point, end_point, color=(83,0,135), thickness=2)
 
         cv2.putText(
             image,
-            str(idx),
+            str(idx + 1),
             middle_point,
             fontFace = cv2.FONT_HERSHEY_SIMPLEX,
             fontScale = 0.5,
-            color = (0,0,255),
-            thickness=2
+            color = (83,0,135),
+            thickness=1,
+            lineType=cv2.LINE_AA
         )
 
-    cv2.imwrite(output_filename, image)
+    if output_filename is not None:
+        cv2.imwrite(output_filename, image)
+    return image
 
 def run_gemini():
-    inference_result = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
-    with open(temp_worksheet_file_path, "rb") as f:
-        worksheet_bytes = f.read()
+    inference_result, image_base64 = run_inference(new_worksheet_file_path) #, temp_worksheet_file_path)
 
     gemini_contents = [
         types.Content(
@@ -56,48 +78,61 @@ def run_gemini():
             parts=[
                 types.Part.from_bytes(
                     mime_type="image/png",
-                    data=worksheet_bytes
+                    data=image_base64
                 ),
                 types.Part.from_text(text=(gemini_prompts[0] + str(inference_result))),
-                #types.Part.from_text(text="Create these bounding boxes: " + str(inference_result)),
             ],
         ),
     ]
 
     generate_content_config = types.GenerateContentConfig(
+        temperature=0.5,
+        candidate_count=1,
         tools=gemini_tools,
         response_mime_type="text/plain",
+        thinking_config=types.ThinkingConfig(thinking_budget=24576, include_thoughts=True)
     )
 
-    gemini_response = gemini_client.models.generate_content(
-        model=gemini_model,
-        contents=gemini_contents,
-        config=generate_content_config,
-    )
-    
-    print(gemini_prompts[0] + str(inference_result))
-
-    print(gemini_response)
+    with yaspin(text="Fixing misplaced bounding boxes", color="green") as sp:
+        while True:
+            try:
+                start_time = time.time()
+                gemini_response = gemini_client.models.generate_content(
+                    model=gemini_model,
+                    contents=gemini_contents,
+                    config=generate_content_config,
+                )
+                sp.ok("[✔]")
+                break
+            except Exception as e:
+                if ("500" or "502" or "503") in str(e):
+                    sp.write("> Internal server error, retrying...")
+                    time.sleep(2)
+                else:
+                    raise
+                    
+    print_info("Thoughts tokens: " + str(gemini_response.usage_metadata.thoughts_token_count))
+    print_info("Output tokens: " + str(gemini_response.usage_metadata.candidates_token_count))
 
     function_call = {}
     for part in gemini_response.candidates[0].content.parts:
+        if part.thought:
+            with yaspin(text="Generating thought summary", color="green") as sp:
+                thought_summary = ("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
+                sp.ok("[✔]")
+            print_info(thought_summary)
         try:
             for key, value in part.function_call.args.items():
                 function_call[key[9:]] = value
         except AttributeError:
             pass
     function_call = function_call[""]
-    print(function_call)
-    add_bounding_boxes(function_call, worksheet_file_path, "temp/worksheet2.png")
-
-# bounding_boxes = run_inference(temp_worksheet_file_path, temp_worksheet_file_path)
-
-# add_bounding_boxes(function_call, worksheet_file_path, temp_worksheet_file_path)
+    annotated_image = add_bounding_boxes(function_call, new_worksheet_file_path) #, "solved_worksheet.png")
+    cv2.imshow("annotated image", annotated_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 run_gemini()
-
-#with open(temp_worksheet_file_path, "rb") as f:
-#    worksheet_bytes_modified = f.read()
 
 #contents = [
 #    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
