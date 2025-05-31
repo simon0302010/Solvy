@@ -137,11 +137,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     function_call = function_call[""]
     annotated_image = add_bounding_boxes(function_call, image_opencv) #, "solved_worksheet.png")
     
-    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True):
-    if False:
-        cv2.imshow("annotated image", annotated_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+    # if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True): cv2.imshow("annotated image", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
 
     return annotated_image
 

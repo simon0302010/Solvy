@@ -35,7 +35,7 @@ Create two bounding boxes 100x100 pixels big at 100,100 and 200,200 by giving th
 """
 ]
 # ===== FUNCTION CALLING CONFIGURATION ===== #
-tools = [
+tools_1 = [
     types.Tool(
         function_declarations=[
             types.FunctionDeclaration(
@@ -75,4 +75,66 @@ tools = [
                 ),
             ),
         ])
+]
+
+
+tools_2 = [
+    types.Tool(
+        function_declarations=[
+            types.FunctionDeclaration(
+                name="solve_latex",
+                description="Solves mathematical expressions and equations of any complexity, including basic arithmetic, algebra, calculus, statistics, and advanced mathematics. Returns the solution in valid LaTeX format. This function must be used for all mathematical calculations to ensure accuracy and proper formatting.",
+                parameters=genai.types.Schema(
+                    type = genai.types.Type.OBJECT,
+                    required = ["latex"],
+                    properties = {
+                        "latex": genai.types.Schema(
+                            type = genai.types.Type.STRING,
+                            description = "The mathematical expression or equation to solve, written in LaTeX format",
+                        ),
+                        "show_steps": genai.types.Schema(
+                            type = genai.types.Type.BOOLEAN,
+                            description = "Whether to include step-by-step solution process in the output",
+                        ),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="put_text",
+                description="Inserts an answer into a specific question on the worksheet. Use this function to populate answers obtained from solve_latex. Each question should be answered exactly once after solving.",
+                parameters=genai.types.Schema(
+                    type = genai.types.Type.OBJECT,
+                    required = ["text", "question_number"],
+                    properties = {
+                        "text": genai.types.Schema(
+                            type = genai.types.Type.STRING,
+                            description = "The answer text to insert, obtained from solve_latex function",
+                        ),
+                        "question_number": genai.types.Schema(
+                            type = genai.types.Type.NUMBER,
+                            description = "The sequential number of the question being answered (starting from 1)",
+                        ),
+                    },
+                ),
+            ),
+            types.FunctionDeclaration(
+                name="complete_worksheet",
+                description="Marks the worksheet as complete after all questions have been answered using put_text. Call this function only when every question on the worksheet has been populated with a valid answer.",
+                parameters=genai.types.Schema(
+                    type = genai.types.Type.OBJECT,
+                    required = ["total_questions"],
+                    properties = {
+                        "total_questions": genai.types.Schema(
+                            type = genai.types.Type.NUMBER,
+                            description = "Total number of questions that were answered on the worksheet",
+                        ),
+                        "summary": genai.types.Schema(
+                            type = genai.types.Type.STRING,
+                            description = "Brief summary of the worksheet completion status",
+                        ),
+                    },
+                ),
+            ),
+        ]
+    )
 ]
