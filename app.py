@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request
+from logger import *
 import base64
 import re
 import os
@@ -39,9 +40,9 @@ def upload():
     with open("image.png", "wb") as f:
         f.write(image_binary)
 
-    print(f"Received image: {len(image_binary)} bytes")
+    print_info(f"Received image: {len(image_binary)} bytes")
 
     return {'success': True, 'message': 'Image uploaded successfully'}
 
 if __name__ == '__main__':
-    app.run(debug=True, port=port)
+    app.run(debug=True, port=port, host="0.0.0.0")

@@ -1,8 +1,9 @@
 import os
-import sys
 import cv2
 import time
 import extra_data
+import click
+import numpy as np
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -14,14 +15,8 @@ load_dotenv()
 
 # Define Variables
 inference = "roboflow" # set inference either to roboflow or local
-try: inference = sys.argv[2]
-except IndexError: pass
-gemini_model = "gemini-2.5-flash-preview-05-20"
-worksheet_file_path = sys.argv[1]
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools
-
-print_info(f"Using {gemini_model}")
 
 if inference == "roboflow":
     print_info("Using Roboflow inference")
@@ -36,41 +31,44 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-worksheet_file = Image.open(worksheet_file_path)
-new_worksheet_file_path = os.path.splitext(worksheet_file_path)[0] + ".png"
-if not worksheet_file_path == new_worksheet_file_path:
-    print_warn("Input worksheet is not in png format, converting...")
-    os.remove(worksheet_file_path)
-    worksheet_file.save(new_worksheet_file_path)
+#worksheet_file = Image.open(worksheet_file_path)
+#new_worksheet_file_path = os.path.splitext(worksheet_file_path)[0] + ".png"
+#if not worksheet_file_path == new_worksheet_file_path:
+#    print_warn("Input worksheet is not in png format, converting...")
+#    os.remove(worksheet_file_path)
+#    worksheet_file.save(new_worksheet_file_path)
 
 # Function to add bounding boxes to any image
-def add_bounding_boxes(bounding_box_data, image_path, output_filename=None):
-    image = cv2.imread(image_path)
-
+def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     for idx, bounding_box in enumerate(bounding_box_data):
         start_point = int(bounding_box["xmin"]), int(bounding_box["ymin"])
         end_point = int(bounding_box["xmax"]), int(bounding_box["ymax"])
-        #middle_point = int(bounding_box["xmax"]) + 3, int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
         middle_point = int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2) - 7, int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
-        cv2.rectangle(image, start_point, end_point, color=(83,0,135), thickness=2)
+        cv2.rectangle(image, start_point, end_point, color=(251,81,163), thickness=2)
 
         cv2.putText(
             image,
             str(idx + 1),
             middle_point,
-            fontFace = cv2.FONT_HERSHEY_SIMPLEX,
+            fontFace = cv2.FONT_HERSHEY_DUPLEX,
             fontScale = 0.5,
-            color = (83,0,135),
+            color = (0, 75, 0),
             thickness=1,
             lineType=cv2.LINE_AA
         )
 
     if output_filename is not None:
         cv2.imwrite(output_filename, image)
+    print_success(f"Added {str(len(bounding_box_data))} bounding boxes")
     return image
 
-def run_gemini():
-    inference_result, image_base64 = run_inference(new_worksheet_file_path) #, temp_worksheet_file_path)
+def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+    print_info(f"Using {gemini_model_1} to fix the bounding boxes")
+    print_info(f"Using {gemini_model_2} to solve the questions")
+    inference_result, image_base64 = run_inference(image_bytes)
 
     gemini_contents = [
         types.Content(
@@ -96,9 +94,8 @@ def run_gemini():
     with yaspin(text="Fixing misplaced bounding boxes", color="green") as sp:
         while True:
             try:
-                start_time = time.time()
                 gemini_response = gemini_client.models.generate_content(
-                    model=gemini_model,
+                    model=gemini_model_1,
                     contents=gemini_contents,
                     config=generate_content_config,
                 )
@@ -106,12 +103,12 @@ def run_gemini():
                 break
             except Exception as e:
                 if ("500" or "502" or "503") in str(e):
-                    sp.write("> Internal server error, retrying...")
+                    sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
                     time.sleep(2)
                 else:
                     raise
                     
-    print_info("Thoughts tokens: " + str(gemini_response.usage_metadata.thoughts_token_count))
+    print_info("Thought tokens: " + str(gemini_response.usage_metadata.thoughts_token_count))
     print_info("Output tokens: " + str(gemini_response.usage_metadata.candidates_token_count))
 
     function_call = {}
@@ -127,12 +124,13 @@ def run_gemini():
         except AttributeError:
             pass
     function_call = function_call[""]
-    annotated_image = add_bounding_boxes(function_call, new_worksheet_file_path) #, "solved_worksheet.png")
-    cv2.imshow("annotated image", annotated_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-run_gemini()
+    annotated_image = add_bounding_boxes(function_call, image_opencv) #, "solved_worksheet.png")
+    
+    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True):
+    if True:
+        cv2.imshow("annotated image", annotated_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 #contents = [
 #    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
