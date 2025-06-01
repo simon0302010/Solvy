@@ -40,9 +40,13 @@
    ```bash
    pip install -r requirements_cloud.txt
    ```
-4. **Add your API keys**
+3. **Add your API keys**
    ```python
    GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
    ROBOFLOW_API_KEY=<YOUR_ROBOFLOW_API_KEY>
    GEMINI_API_KEY_LIST=[<GEMINI_API_KEY_1>, <GEMINI_API_KEY_2>] (optional)
+   ```
+4. **Run the program**
+   ```bash
+   python app.py
    ```
