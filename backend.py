@@ -1,16 +1,19 @@
-import os
-import cv2
-import time
-import extra_data
-import click
-import numpy as np
 import io
+import os
+import time
+
+import cv2
+import numpy as np
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from logger import *
 from PIL import Image, ImageOps
 from yaspin import yaspin
+
+from answer_questions import answer_questions
+import click
+import extra_data
+from logger import *
 
 load_dotenv()
 
@@ -32,18 +35,21 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+def list_to_dict(old_list):
+    new_dict = {}
+    for idx, entry in enumerate(old_list):
+        new_dict[str(idx + 1)] = entry
+    return new_dict
+
 def prepare_image(image_bytes, max_dim=1024):
-    # Open image and fix orientation
     image = Image.open(io.BytesIO(image_bytes))
     image = ImageOps.exif_transpose(image)
 
-    # Resize if needed
     w, h = image.size
     scale = min(max_dim / h, max_dim / w, 1.0)
     if scale < 1.0:
         image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
-    # Convert to PNG bytes
     output = io.BytesIO()
     image.save(output, format="PNG")
     return output.getvalue()
@@ -131,27 +137,17 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
             print_info(thought_summary)
         try:
             for key, value in part.function_call.args.items():
-                function_call[key[9:]] = value
+                function_call[key] = value
         except AttributeError:
             pass
-    function_call = function_call[""]
-    annotated_image = add_bounding_boxes(function_call, image_opencv) #, "solved_worksheet.png")
     
-    # if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True): cv2.imshow("annotated image", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
+    bounding_boxes_dict = list_to_dict(function_call["boxes"])
+    annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv) #, "solved_worksheet.png")
+    
+    print(bounding_boxes_dict)
+
+    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True): cv2.imshow("annotated image", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
+
+    answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
     return annotated_image
-
-#contents = [
-#    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
-#    types.Content(role="model", parts=[types.Part.from_text(text=("This was a function call: " + str(function_call)))]),
-#    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes_modified), types.Part.from_text(text=gemini_prompts[1])]),
-#]
-
-#start_time = time.time()
-#gemini_response = gemini_client.models.generate_content(model=gemini_model, contents=contents, config=generate_content_config)
-#print(f"second api call took {time.time() - start_time} seconds.")
-#function_call = {}
-#for key, value in gemini_response.candidates[0].content.parts[0].function_call.args.items():
-#    function_call[key[9:]] = value
-#function_call = function_call[""]
-#add_bounding_boxes(function_call, worksheet_file_path, "temp/worksheet2.png")
