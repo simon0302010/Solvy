@@ -24,14 +24,16 @@ Here are the coordinates that belong to the bounding boxes you can see in the im
 
 """,
 """
-This image shows the bounding boxes you initially provided, with each box numbered according to your original order.
-Please review and refine the positions of these bounding boxes.
-Return the updated bounding boxes in the same order.
-To modify the bounding boxes, just use the same API that is used for creating them, just use the new values.
-The data you first provided is NEVER perfect. You HAVE to refine it by calling the function call.
-""",
-"""
-Create two bounding boxes 100x100 pixels big at 100,100 and 200,200 by giving the bounding box creation api the coordinates to such boxes.
+You are a worksheet solver that must follow these precise instructions: 
+Always respond in the same language as the worksheet provided to maintain consistency throughout the solving process. 
+All mathematical calculations must be performed using the SOLVE_LATEX function with no manual calculations or shortcuts allowed, 
+showing work through proper LaTeX formatting. 
+Use the PUT_TEXT function to place final answers on the worksheet only after completing all necessary calculations. 
+You must solve every problem on each worksheet provided while executing only ONE function call per message, 
+processing systematically through each problem. Use only answer_ids from the provided list, where each ID corresponds to a bounding box center on the worksheet. 
+Important: not all provided IDs need to be used - only use IDs that correspond to actual answer fields for the problems being solved. 
+Follow this workflow: identify all problems on the worksheet, use SOLVE_LATEX for each mathematical operation, 
+place results using PUT_TEXT with appropriate answer_ids, and work through problems systematically one function call at a time.
 """
 ]
 # ===== FUNCTION CALLING CONFIGURATION ===== #
@@ -75,66 +77,4 @@ tools_1 = [
                 ),
             ),
         ])
-]
-
-
-tools_2 = [
-    types.Tool(
-        function_declarations=[
-            types.FunctionDeclaration(
-                name="solve_latex",
-                description="Solves mathematical expressions and equations of any complexity, including basic arithmetic, algebra, calculus, statistics, and advanced mathematics. Returns the solution in valid LaTeX format. This function must be used for all mathematical calculations to ensure accuracy and proper formatting.",
-                parameters=genai.types.Schema(
-                    type = genai.types.Type.OBJECT,
-                    required = ["latex"],
-                    properties = {
-                        "latex": genai.types.Schema(
-                            type = genai.types.Type.STRING,
-                            description = "The mathematical expression or equation to solve, written in LaTeX format",
-                        ),
-                        "show_steps": genai.types.Schema(
-                            type = genai.types.Type.BOOLEAN,
-                            description = "Whether to include step-by-step solution process in the output",
-                        ),
-                    },
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="put_text",
-                description="Inserts an answer into a specific question on the worksheet. Use this function to populate answers obtained from solve_latex. Each question should be answered exactly once after solving.",
-                parameters=genai.types.Schema(
-                    type = genai.types.Type.OBJECT,
-                    required = ["text", "question_number"],
-                    properties = {
-                        "text": genai.types.Schema(
-                            type = genai.types.Type.STRING,
-                            description = "The answer text to insert, obtained from solve_latex function",
-                        ),
-                        "question_number": genai.types.Schema(
-                            type = genai.types.Type.NUMBER,
-                            description = "The sequential number of the question being answered (starting from 1)",
-                        ),
-                    },
-                ),
-            ),
-            types.FunctionDeclaration(
-                name="complete_worksheet",
-                description="Marks the worksheet as complete after all questions have been answered using put_text. Call this function only when every question on the worksheet has been populated with a valid answer.",
-                parameters=genai.types.Schema(
-                    type = genai.types.Type.OBJECT,
-                    required = ["total_questions"],
-                    properties = {
-                        "total_questions": genai.types.Schema(
-                            type = genai.types.Type.NUMBER,
-                            description = "Total number of questions that were answered on the worksheet",
-                        ),
-                        "summary": genai.types.Schema(
-                            type = genai.types.Type.STRING,
-                            description = "Brief summary of the worksheet completion status",
-                        ),
-                    },
-                ),
-            ),
-        ]
-    )
 ]
