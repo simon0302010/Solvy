@@ -1,22 +1,25 @@
 import os
 import sys
+import cv2
 import time
+import base64
 import ms_math
+import extra_data
 from logger import *
 from yaspin import yaspin
 from google import genai
 from google.genai import types
 
+prompt = extra_data.prompts[1]
 
-def generate():
-    with open(sys.argv[1], "rb") as f:
-        image_bytes = f.read()
+def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
+    _, buffer = cv2.imencode('.png', image_opencv)
+    annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
+    image_bytes = base64.b64decode(annotated_image_base64)
 
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )
-
-    model = "gemini-2.0-flash"
     contents = [
         types.Content(
             role="user",
@@ -25,6 +28,7 @@ def generate():
                     mime_type="image/png",
                     data=image_bytes,
                 ),
+                types.Part.from_text(text="Possible IDs: " + str(possible_ids))
             ],
         ),
     ]
@@ -50,15 +54,15 @@ def generate():
                     description="Inserts an answer into a specific question on the worksheet. Use this function to populate answers obtained from solve_latex. Each question should be answered exactly once after solving.",
                     parameters=genai.types.Schema(
                         type=genai.types.Type.OBJECT,
-                        required=["text", "question_number"],
+                        required=["text", "question_id"],
                         properties={
                             "text": genai.types.Schema(
                                 type=genai.types.Type.STRING,
                                 description="The answer text to insert, obtained from solve_latex function",
                             ),
-                            "question_number": genai.types.Schema(
+                            "question_id": genai.types.Schema(
                                 type=genai.types.Type.NUMBER,
-                                description="The sequential number of the question being answered (starting from 1)",
+                                description="The id of the field to put the answers in.",
                             ),
                         },
                     ),
@@ -89,11 +93,11 @@ def generate():
         response_mime_type="text/plain",
         candidate_count=1,
         system_instruction=[
-            types.Part.from_text(text="""Answer the questions in the same language as the worksheet. YOU HAVE TO DO EVERY MATH OPERATION USING SOLVE_LATEX. After that, you can put those results onto the worksheet using PUT_TEXT. Solve every worksheet I give you. ONLY GIVE ME ONE FUNCTION CALL PER MESSAGE."""),
+            types.Part.from_text(text=prompt),
         ],
     )
 
-    all_calls = []
+    answers = {}
 
     while True:
         with yaspin(text="Solving task", color="green") as sp:
@@ -135,11 +139,10 @@ def generate():
             print_info("Text Output: " + text_output)
         if function_call_name is not None:
             print_info("Function Call: " + function_call_name + " = " + str(function_call))
-            all_calls.append(function_call_name + " = " + str(function_call))
 
         if function_call_name == "complete_worksheet":
             print_success("Worksheet Completed")
-            return all_calls
+            return answers
         elif function_call_name == "solve_latex":
             math_response = ms_math.solve_latex(str(function_call["latex"]))
             func_response = ""
@@ -148,6 +151,7 @@ def generate():
             if "templateSteps" in math_response and math_response["templateSteps"]:
                 func_response += ("\nSteps: " + str(math_response["templateSteps"][0]))
         elif function_call_name == "put_text":
+            answers[str(function_call["question_id"])] = function_call["text"]
             func_response = "success"
 
         #print_info("Response from Function Call: " + func_response)
@@ -182,6 +186,3 @@ def generate():
                 ]
             )
         )
-
-if __name__ == "__main__":
-    print(generate())
