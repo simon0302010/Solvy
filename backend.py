@@ -57,7 +57,7 @@ def prepare_image(image_bytes, max_dim=1024):
     return output.getvalue()
 
 def get_mean_font_size(image_bytes):
-    reader = easyocr.Reader(['en'], gpu=True)
+    reader = easyocr.Reader(['en'], gpu=False)
     results = reader.readtext(image_bytes)
     heights = [float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
                for bbox, text, conf in results if conf > 0.5]
@@ -97,7 +97,7 @@ def add_text(text_dict, bounding_boxes_dict, font_size, image):
         answer_bounding_box = bounding_boxes_dict[text_id]
         text_start = (
             int(answer_bounding_box["xmin"]) + 2,
-            int((int(answer_bounding_box["ymin"]) + int(answer_bounding_box["ymax"])) / 2 + 5)
+            int(answer_bounding_box["ymin"])
         )
         draw.text(text_start, answer_text, font=font, fill=(0, 0, 0))
 
@@ -151,7 +151,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                     sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
                     time.sleep(2)
                 elif "429" in str(e):
-                    sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, retrying in 30 seconds...")
+                    sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, waiting for 30 seconds...")
                     time.sleep(30)
                 else:
                     raise
@@ -181,11 +181,13 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
-    
+
+    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
+
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
     solved_worksheet = add_text(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
 
-    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
+    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
 
     return solved_worksheet
