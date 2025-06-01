@@ -16,7 +16,6 @@
 
 - Linux (requirements require modifications to work with other systems)
 - Python 3.11
-- An NVIDIA GPU (for local AI inference) (optional)
 
 ---
 
@@ -45,4 +44,5 @@
    ```python
    GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
    ROBOFLOW_API_KEY=<YOUR_ROBOFLOW_API_KEY>
+   GEMINI_API_KEY_LIST=[<GEMINI_API_KEY_1>, <GEMINI_API_KEY_2>] (optional)
    ```
