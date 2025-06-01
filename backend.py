@@ -150,6 +150,9 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                 if ("500" or "502" or "503") in str(e):
                     sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
                     time.sleep(2)
+                elif "429" in str(e):
+                    sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, retrying in 30 seconds...")
+                    time.sleep(30)
                 else:
                     raise
                     
@@ -160,8 +163,15 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     for part in gemini_response.candidates[0].content.parts:
         if part.thought:
             with yaspin(text="Generating thought summary", color="green") as sp:
-                thought_summary = ("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
-                sp.ok("[✔]")
+                try:
+                    thought_summary = ("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
+                    sp.ok("[✔]")
+                except Exception as e:
+                    if ("500" or "502" or "503") in str(e):
+                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
+                        time.sleep(2)
+                    else:
+                        raise
             print_info(thought_summary)
         try:
             for key, value in part.function_call.args.items():
@@ -170,7 +180,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
             pass
     
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
-    annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv) #, "solved_worksheet.png")
+    annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
     
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
