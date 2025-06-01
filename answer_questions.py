@@ -1,5 +1,6 @@
 import os
 import cv2
+import ast
 import time
 import base64
 import ms_math
@@ -19,6 +20,7 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
     client = genai.Client(
         api_key=os.environ.get("GEMINI_API_KEY"),
     )
+    current_api_key = os.environ.get("GEMINI_API_KEY")
     contents = [
         types.Content(
             role="user",
@@ -114,9 +116,21 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                         sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
                         time.sleep(2)
                     elif "429" in str(e):
-                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, switching API Key")
-                        time.sleep(5)
-                        client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY2"))
+                        if os.environ.get("GEMINI_API_KEY_LIST"):
+                            sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, switching API Key...")
+                            api_key_list = ast.literal_eval(os.environ.get("GEMINI_API_KEY_LIST"))
+                            try:
+                                current_index = api_key_list.index(current_api_key)
+                            except ValueError:
+                                current_index = 0  # fallback if current_api_key not in list
+                            next_index = (current_index + 1) % len(api_key_list)
+                            client = genai.Client(api_key=api_key_list[next_index])
+                            current_api_key = api_key_list[next_index]
+                        else:
+                            sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, waiting for 30 seconds...")
+                            time.sleep(30)
+                    else:
+                        raise
 
 
         function_call = {}
@@ -185,8 +199,3 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                 ]
             )
         )
-
-if __name__ == "__main__":
-    image = cv2.imread("test_worksheets/2.png")
-
-    print(answer_questions(image_opencv=image, possible_ids=[1, 2, 3]))
