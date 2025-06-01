@@ -37,6 +37,10 @@
    ```bash
    pip install -r requirements_cpu.txt
    ```
+   If you are not running the inference locally:
+   ```bash
+   pip install -r requirements_cloud.txt
+   ```
 4. **Add your API keys**
    ```python
    GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
