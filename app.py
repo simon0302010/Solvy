@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request
 from logger import *
 import backend
-import base64
-import re
 import os
 
 try:
