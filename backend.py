@@ -9,7 +9,7 @@ import numpy as np
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw, ImageFont
 from yaspin import yaspin
 
 from answer_questions import answer_questions
@@ -59,7 +59,7 @@ def prepare_image(image_bytes, max_dim=1024):
 def get_mean_font_size(image_bytes):
     reader = easyocr.Reader(['en'], gpu=True)
     results = reader.readtext(image_bytes)
-    heights = [max(p[1] for p in bbox) - min(p[1] for p in bbox) 
+    heights = [float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
                for bbox, text, conf in results if conf > 0.5]
     return statistics.mean(heights) if heights else 0
 
@@ -88,6 +88,10 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     return image
 
 def add_text(text_dict, bounding_boxes_dict, font_size, image):
+    image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(image_pil)
+    font = ImageFont.truetype("DejaVuSans.ttf", int(font_size))
+
     for text_id in text_dict:
         answer_text = str(text_dict[text_id])
         answer_bounding_box = bounding_boxes_dict[text_id]
@@ -95,20 +99,9 @@ def add_text(text_dict, bounding_boxes_dict, font_size, image):
             int(answer_bounding_box["xmin"]) + 2,
             int((int(answer_bounding_box["ymin"]) + int(answer_bounding_box["ymax"])) / 2 + 5)
         )
-        text_start = (int(text_start[0]), int(text_start[1]))
+        draw.text(text_start, answer_text, font=font, fill=(0, 0, 0))
 
-        cv2.putText(
-            image,
-            answer_text,
-            text_start,
-            fontFace=cv2.FONT_HERSHEY_DUPLEX,
-            fontScale=font_size/30,
-            color=(0,0,0),
-            thickness=1,
-            lineType=cv2.LINE_AA
-        )
-
-    return image
+    return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
 
 def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
     image_bytes = prepare_image(image_bytes)
