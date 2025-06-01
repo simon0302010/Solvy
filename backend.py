@@ -3,6 +3,8 @@ import os
 import time
 
 import cv2
+import easyocr
+import statistics
 import numpy as np
 from dotenv import load_dotenv
 from google import genai
@@ -54,6 +56,13 @@ def prepare_image(image_bytes, max_dim=1024):
     image.save(output, format="PNG")
     return output.getvalue()
 
+def get_mean_font_size(image_bytes):
+    reader = easyocr.Reader(['en'], gpu=True)
+    results = reader.readtext(image_bytes)
+    heights = [max(p[1] for p in bbox) - min(p[1] for p in bbox) 
+               for bbox, text, conf in results if conf > 0.5]
+    return statistics.mean(heights) if heights else 0
+
 # Function to add bounding boxes to any image
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     for idx, bounding_box in enumerate(bounding_box_data):
@@ -66,9 +75,9 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
             image,
             str(idx + 1),
             middle_point,
-            fontFace = cv2.FONT_HERSHEY_DUPLEX,
-            fontScale = 0.5,
-            color = (0, 75, 0),
+            fontFace=cv2.FONT_HERSHEY_DUPLEX,
+            fontScale=0.5,
+            color=(0,75,0),
             thickness=1,
             lineType=cv2.LINE_AA
         )
@@ -78,10 +87,36 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     print_success(f"Added {str(len(bounding_box_data))} bounding boxes")
     return image
 
+def add_text(text_dict, bounding_boxes_dict, font_size, image):
+    for text_id in text_dict:
+        answer_text = str(text_dict[text_id])
+        answer_bounding_box = bounding_boxes_dict[text_id]
+        text_start = (
+            int(answer_bounding_box["xmin"]) + 2,
+            int((int(answer_bounding_box["ymin"]) + int(answer_bounding_box["ymax"])) / 2 + 5)
+        )
+        text_start = (int(text_start[0]), int(text_start[1]))
+
+        cv2.putText(
+            image,
+            answer_text,
+            text_start,
+            fontFace=cv2.FONT_HERSHEY_DUPLEX,
+            fontScale=font_size/30,
+            color=(0,0,0),
+            thickness=1,
+            lineType=cv2.LINE_AA
+        )
+
+    return image
+
 def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
     image_bytes = prepare_image(image_bytes)
+    mean_font_size = get_mean_font_size(image_bytes)
+    print_info(f"Mean font size on image is {mean_font_size}")
     nparr = np.frombuffer(image_bytes, np.uint8)
     image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    solved_worksheet = image_opencv.copy()
 
     print_info(f"Using {gemini_model_1} to fix the bounding boxes")
     print_info(f"Using {gemini_model_2} to solve the questions")
@@ -144,10 +179,10 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv) #, "solved_worksheet.png")
     
-    print(bounding_boxes_dict)
-
-    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True): cv2.imshow("annotated image", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
-
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
-    return annotated_image
+    solved_worksheet = add_text(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
+
+    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
+
+    return solved_worksheet

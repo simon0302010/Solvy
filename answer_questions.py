@@ -1,5 +1,4 @@
 import os
-import sys
 import cv2
 import time
 import base64
@@ -186,3 +185,8 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                 ]
             )
         )
+
+if __name__ == "__main__":
+    image = cv2.imread("test_worksheets/2.png")
+
+    print(answer_questions(image_opencv=image, possible_ids=[1, 2, 3]))
