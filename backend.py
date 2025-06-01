@@ -17,7 +17,7 @@ load_dotenv()
 # Define Variables
 inference = "roboflow" # set inference either to roboflow or local
 gemini_prompts = extra_data.prompts
-gemini_tools = extra_data.tools
+gemini_tools = extra_data.tools_1
 
 if inference == "roboflow":
     print_info("Using Roboflow inference")
