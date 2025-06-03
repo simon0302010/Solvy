@@ -30,7 +30,7 @@ def run_inference(image_bytes): #, output_image_path):
             sp.ok("[✔]")
         else:
             sp.fail("[✖]")
-            exit()
+            raise Exception("No bounding boxes detected")
 
     bounding_box_list = []
     bounding_box_dict = {}

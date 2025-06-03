@@ -23,7 +23,7 @@ def run_inference(image_bytes):
             sp.ok("[✔]")
         else:
             sp.fail("[✖]")
-            exit()
+            raise Exception("No bounding boxes detected")
 
 
     bounding_box_annotator = sv.BoxAnnotator()

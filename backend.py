@@ -127,7 +127,12 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
 
     print_info(f"Using {gemini_model_1} to fix the bounding boxes")
     print_info(f"Using {gemini_model_2} to solve the questions")
-    inference_result, image_base64 = run_inference(image_bytes)
+    
+    try:
+        inference_result, image_base64 = run_inference(image_bytes)
+    except:
+        inference_result = "No bounding boxes detected. Please place the bounding boxes yourself."
+        image_base64 = image_bytes
 
     gemini_contents = [
         types.Content(
@@ -195,7 +200,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
 
-    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
+    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
 
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
