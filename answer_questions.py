@@ -112,9 +112,9 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                     sp.ok("[✔]")
                     break
                 except Exception as e:
-                    if ("500" or "502" or "503") in str(e):
+                    if any(code in str(e) for code in ["500", "502", "503"]):
                         sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
-                        time.sleep(2)
+                        time.sleep(15)
                     elif "429" in str(e):
                         if os.environ.get("GEMINI_API_KEY_LIST"):
                             sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, switching API Key...")
@@ -159,10 +159,13 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
         elif function_call_name == "solve_latex":
             math_response = ms_math.solve_latex(str(function_call["latex"]))
             func_response = ""
-            func_response += ("Action: " + str(math_response["actionName"]) + "\n")
-            func_response += ("Solution: " + str(math_response["solution"]).replace("$", ""))
-            if "templateSteps" in math_response and math_response["templateSteps"]:
-                func_response += ("\nSteps: " + str(math_response["templateSteps"][0]))
+            if isinstance(math_response, dict):
+                func_response += ("Action: " + str(math_response["actionName"]) + "\n")
+                func_response += ("Solution: " + str(math_response["solution"]).replace("$", ""))
+                if "templateSteps" in math_response and math_response["templateSteps"]:
+                    func_response += ("\nSteps: " + str(math_response["templateSteps"][0]))
+            else:
+                func_response += str(math_response)  # error message as string
         elif function_call_name == "put_text":
             answers[str(function_call["question_id"])] = function_call["text"]
             func_response = "success"
