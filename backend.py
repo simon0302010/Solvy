@@ -4,6 +4,7 @@ import time
 
 import cv2
 import easyocr
+import requests
 import statistics
 import numpy as np
 from dotenv import load_dotenv
@@ -37,6 +38,19 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+def hackclub_ai(text):
+    headers = {"Content-Type": "application/json"}
+    json = {
+        "messages": [{"role": "user", "content": str(text)}]
+    }
+
+    response = requests.post("https://ai.hackclub.com/chat/completions", headers=headers, json=json)
+    
+    if response.status_code == 200:
+        return response.json()["choices"][0]["message"]["content"].strip()
+    else:
+        return None
+
 def list_to_dict(old_list):
     new_dict = {}
     for idx, entry in enumerate(old_list):
@@ -61,7 +75,7 @@ def get_mean_font_size(image_bytes):
     results = reader.readtext(image_bytes)
     heights = [float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
                for bbox, text, conf in results if conf > 0.5]
-    return statistics.mean(heights) if heights else 0
+    return round(statistics.mean(heights) if heights else 0, 1)
 
 # Function to add bounding boxes to any image
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
@@ -147,7 +161,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                 sp.ok("[✔]")
                 break
             except Exception as e:
-                if ("500" or "502" or "503") in str(e):
+                if any(code in str(e) for code in ["500", "502", "503"]):
                     sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
                     time.sleep(2)
                 elif "429" in str(e):
@@ -163,15 +177,14 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     for part in gemini_response.candidates[0].content.parts:
         if part.thought:
             with yaspin(text="Generating thought summary", color="green") as sp:
-                try:
-                    thought_summary = ("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
-                    sp.ok("[✔]")
-                except Exception as e:
-                    if ("500" or "502" or "503") in str(e):
-                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
-                        time.sleep(2)
+                while True:
+                    thought_summary = hackclub_ai(f"make a detailed 50 word summary: {part.text}")
+                    if thought_summary is not None:
+                        sp.ok("[✔]")
+                        break
                     else:
-                        raise
+                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "An error occured, retrying...")
+                        time.sleep(30)
             print_info(thought_summary)
         try:
             for key, value in part.function_call.args.items():
@@ -182,12 +195,12 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
 
-    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
+    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
 
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
     solved_worksheet = add_text(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
 
-    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
+    if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
 
     return solved_worksheet
