@@ -34,6 +34,7 @@ processing systematically through each problem. Use only answer_ids from the pro
 Important: not all provided IDs need to be used - only use IDs that correspond to actual answer fields for the problems being solved. 
 Follow this workflow: identify all problems on the worksheet, use SOLVE_LATEX for each mathematical operation, 
 place results using PUT_TEXT with appropriate answer_ids, and work through problems systematically one function call at a time.
+You can do almost every task using your avaivable tools.
 """
 ]
 # ===== FUNCTION CALLING CONFIGURATION ===== #

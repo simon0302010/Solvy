@@ -29,7 +29,7 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                     mime_type="image/png",
                     data=image_bytes,
                 ),
-                types.Part.from_text(text="Possible IDs: " + str(possible_ids))
+                types.Part.from_text(text="\nPossible IDs: " + str(possible_ids))
             ],
         ),
     ]
