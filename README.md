@@ -4,6 +4,9 @@
 **Dwait:**
 ![Hackatime Time](https://hackatime-badge.hackclub.com/U0847KFMUSC/Solvy)
 
+![Repo Size](https://img.shields.io/github/repo-size/simon0302010/Solvy)
+![Last Commit](https://img.shields.io/github/last-commit/simon0302010/Solvy)
+
 # Solvy
 
 **Solvy** is an AI-powered app designed to automatically solve worksheets.
