@@ -55,11 +55,11 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                     description="Inserts an answer into a specific question on the worksheet. Use this function to populate answers obtained from solve_latex. Each question should be answered exactly once after solving.",
                     parameters=genai.types.Schema(
                         type=genai.types.Type.OBJECT,
-                        required=["text", "question_id"],
+                        required=["question_id"],
                         properties={
                             "text": genai.types.Schema(
                                 type=genai.types.Type.STRING,
-                                description="The answer text to insert, obtained from solve_latex function",
+                                description="The answer text to inserted. Latex equations can be embedded by using $latex$. This function is the only option to add text or mathematical expressions to the worksheet. It is a necessary step in the solving of each task that requires an answer.",
                             ),
                             "question_id": genai.types.Schema(
                                 type=genai.types.Type.NUMBER,
