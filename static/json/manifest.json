@@ -3,5 +3,12 @@
     "short_name": "Solvy",
     "display": "standalone",
     "scope": "/",
-    "start_url": "/"
+    "start_url": "/",
+    "icons": [
+        {
+          "src": "static/images/1024.png",
+          "sizes": "1024x1024",
+          "type": "image/png"
+        }
+      ]
 }

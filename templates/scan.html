@@ -10,12 +10,19 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="manifest" href="/static/json/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" sizes="1024x1024" href="/static/images/1024.png">
 </head>
 <body>
 
-    <div class="container text-center camera-area">
-        <video id="camera" autoplay playsinline></video>
-        <p class="text-small">Tap the scan button to capture a question</p>
+    <div class="container text-center camera-area d-flex justify-content-center">
+        <p class="text-small">Tap the scan button to capture a question.</p>
+        {% if uploaded_image %}
+    <div class="text-center mt-4">
+        <p>Scanned Image:</p>
+        <img src="{{ uploaded_image }}" alt="Scanned" class="img-fluid rounded" style="max-height: 300px;">
+    </div>
+{% endif %}
+
     </div>
 
     <!-- Floating Scan Button -->
@@ -43,6 +50,55 @@
             Settings
         </a>
     </div>
+<script>
+    document.getElementById('cameraInput').onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+    
+        const formData = new FormData();
+        formData.append('image', file);
+    
+        const container = document.querySelector(".camera-area");
+        container.innerHTML = '<p class="text-small">Processing</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
+    
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.image_data) {
+                // Save to localStorage
+                localStorage.setItem('lastScan', data.image_data);
+    
+                // Display it
+                container.innerHTML = `
+                    <p class="text-small">Scanned Image:</p>
+                    <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 300px;">
+                `;
+            } else {
+                container.innerHTML = `<p class="text-danger">Error: ${data.error || 'Unknown error'}</p>`;
+            }
+        })
+        .catch(err => {
+            container.innerHTML = `<p class="text-danger">Upload failed</p>`;
+            console.error(err);
+        });
+    };
+    
+// On page load, show last scanned image if available
+window.addEventListener('DOMContentLoaded', () => {
+    const container = document.querySelector(".camera-area");
+    const lastScan = localStorage.getItem('lastScan');
 
+    if (lastScan) {
+        container.innerHTML = `
+            <p class="text-small">Last Scanned Image:</p>
+            <img src="${lastScan}" alt="Processed Image" class="img-fluid rounded" style="max-height: 300px;">
+        `;
+    }
+});
+    
+</script>
 </body>
 </html>

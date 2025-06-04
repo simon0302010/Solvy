@@ -10,23 +10,26 @@
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="manifest" href="/static/json/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" sizes="1024x1024" href="/static/images/1024.png">
 </head>
 <body>
     <div class="container mt-3">
         <div class="top-bar text-center">
             <h2 class="fw-bold">Home</h2>
             <div class="d-flex justify-content-center">
-                <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
-                <button class="btn btn-custom" id="scan-button" onclick="document.getElementById('cameraInput').click()">
+                <a class="btn btn-custom" id="scan-button" href="/scan">
                     <i class="bi bi-camera"></i> Scan
-                </button>
+                </a>
                 <input type="file" id="uploadInput" accept="image/*,.pdf" style="display: none;">
                 <button class="btn btn-custom" id="upload-button" onclick="document.getElementById('uploadInput').click()">
                     <i class="bi bi-upload"></i> Upload
                 </button>
             </div>
         </div>
-
+        {% if uploaded_image %}
+            <h2>Uploaded Image:</h2>
+            <img src="{{ uploaded_image }}" alt="Processed image" style="max-width: 100%;">
+        {% endif %}
         {% for q in questions %}
         <div class="card-custom">
             <div>
@@ -58,7 +61,7 @@
         </a>
     </div>
 <script>
-document.getElementById('cameraInput').onchange = function(e) {
+document.getElementById('uploadInput').onchange = function(e) {
     const file = e.target.files[0];
     if (file) {
         const formData = new FormData();
