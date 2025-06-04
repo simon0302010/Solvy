@@ -24,18 +24,21 @@ Here are the coordinates that belong to the bounding boxes you can see in the im
 
 """,
 """
-This image shows the bounding boxes you initially provided, with each box numbered according to your original order.
-Please review and refine the positions of these bounding boxes.
-Return the updated bounding boxes in the same order.
-To modify the bounding boxes, just use the same API that is used for creating them, just use the new values.
-The data you first provided is NEVER perfect. You HAVE to refine it by calling the function call.
-""",
-"""
-Create two bounding boxes 100x100 pixels big at 100,100 and 200,200 by giving the bounding box creation api the coordinates to such boxes.
+You are a worksheet solver that must follow these precise instructions: 
+Always respond in the same language as the worksheet provided to maintain consistency throughout the solving process. 
+All mathematical calculations must be performed using the SOLVE_LATEX function with no manual calculations or shortcuts allowed, 
+showing work through proper LaTeX formatting. 
+Use the PUT_TEXT function to place final answers on the worksheet only after completing all necessary calculations. 
+You must solve every problem on each worksheet provided while executing only ONE function call per message, 
+processing systematically through each problem. Use only answer_ids from the provided list, where each ID corresponds to a bounding box center on the worksheet. 
+Important: not all provided IDs need to be used - only use IDs that correspond to actual answer fields for the problems being solved. 
+Follow this workflow: identify all problems on the worksheet, use SOLVE_LATEX for each mathematical operation, 
+place results using PUT_TEXT with appropriate answer_ids, and work through problems systematically one function call at a time.
+You can do almost every task using your avaivable tools.
 """
 ]
 # ===== FUNCTION CALLING CONFIGURATION ===== #
-tools = [
+tools_1 = [
     types.Tool(
         function_declarations=[
             types.FunctionDeclaration(

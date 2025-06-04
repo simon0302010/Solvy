@@ -1,23 +1,29 @@
-import os
-import cv2
-import time
-import extra_data
-import click
-import numpy as np
 import io
+import os
+import time
+
+import cv2
+import easyocr
+import requests
+import statistics
+import numpy as np
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from logger import *
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageDraw, ImageFont
 from yaspin import yaspin
+
+from answer_questions import answer_questions
+import click
+import extra_data
+from logger import *
 
 load_dotenv()
 
 # Define Variables
 inference = "roboflow" # set inference either to roboflow or local
 gemini_prompts = extra_data.prompts
-gemini_tools = extra_data.tools
+gemini_tools = extra_data.tools_1
 
 if inference == "roboflow":
     print_info("Using Roboflow inference")
@@ -32,21 +38,44 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+def hackclub_ai(text):
+    headers = {"Content-Type": "application/json"}
+    json = {
+        "messages": [{"role": "user", "content": str(text)}]
+    }
+
+    response = requests.post("https://ai.hackclub.com/chat/completions", headers=headers, json=json)
+    
+    if response.status_code == 200:
+        return response.json()["choices"][0]["message"]["content"].strip()
+    else:
+        return None
+
+def list_to_dict(old_list):
+    new_dict = {}
+    for idx, entry in enumerate(old_list):
+        new_dict[str(idx + 1)] = entry
+    return new_dict
+
 def prepare_image(image_bytes, max_dim=1024):
-    # Open image and fix orientation
     image = Image.open(io.BytesIO(image_bytes))
     image = ImageOps.exif_transpose(image)
 
-    # Resize if needed
     w, h = image.size
     scale = min(max_dim / h, max_dim / w, 1.0)
     if scale < 1.0:
         image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
-    # Convert to PNG bytes
     output = io.BytesIO()
     image.save(output, format="PNG")
     return output.getvalue()
+
+def get_mean_font_size(image_bytes):
+    reader = easyocr.Reader(['en'], gpu=False)
+    results = reader.readtext(image_bytes)
+    heights = [float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
+               for bbox, text, conf in results if conf > 0.5]
+    return round(statistics.mean(heights) if heights else 0, 1)
 
 # Function to add bounding boxes to any image
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
@@ -60,9 +89,9 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
             image,
             str(idx + 1),
             middle_point,
-            fontFace = cv2.FONT_HERSHEY_DUPLEX,
-            fontScale = 0.5,
-            color = (0, 75, 0),
+            fontFace=cv2.FONT_HERSHEY_DUPLEX,
+            fontScale=0.5,
+            color=(0,75,0),
             thickness=1,
             lineType=cv2.LINE_AA
         )
@@ -72,14 +101,38 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     print_success(f"Added {str(len(bounding_box_data))} bounding boxes")
     return image
 
+def add_text(text_dict, bounding_boxes_dict, font_size, image):
+    image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    draw = ImageDraw.Draw(image_pil)
+    font = ImageFont.truetype("DejaVuSans.ttf", int(font_size))
+
+    for text_id in text_dict:
+        answer_text = str(text_dict[text_id])
+        answer_bounding_box = bounding_boxes_dict[text_id]
+        text_start = (
+            int(answer_bounding_box["xmin"]) + 2,
+            int(answer_bounding_box["ymin"])
+        )
+        draw.text(text_start, answer_text, font=font, fill=(0, 0, 0))
+
+    return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+
 def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
     image_bytes = prepare_image(image_bytes)
+    mean_font_size = get_mean_font_size(image_bytes)
+    print_info(f"Mean font size on image is {mean_font_size}")
     nparr = np.frombuffer(image_bytes, np.uint8)
     image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    solved_worksheet = image_opencv.copy()
 
     print_info(f"Using {gemini_model_1} to fix the bounding boxes")
     print_info(f"Using {gemini_model_2} to solve the questions")
-    inference_result, image_base64 = run_inference(image_bytes)
+    
+    try:
+        inference_result, image_base64 = run_inference(image_bytes)
+    except:
+        inference_result = "No bounding boxes detected. Please place the bounding boxes yourself."
+        image_base64 = image_bytes
 
     gemini_contents = [
         types.Content(
@@ -113,9 +166,12 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                 sp.ok("[✔]")
                 break
             except Exception as e:
-                if ("500" or "502" or "503") in str(e):
+                if any(code in str(e) for code in ["500", "502", "503"]):
                     sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
                     time.sleep(2)
+                elif "429" in str(e):
+                    sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, waiting for 30 seconds...")
+                    time.sleep(30)
                 else:
                     raise
                     
@@ -126,36 +182,31 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     for part in gemini_response.candidates[0].content.parts:
         if part.thought:
             with yaspin(text="Generating thought summary", color="green") as sp:
-                thought_summary = ("Thought summary: " + gemini_client.models.generate_content(model="gemma-3-12b-it", contents=f"make a detailed 50 word summary: {part.text}").text.strip())
-                sp.ok("[✔]")
+                while True:
+                    thought_summary = hackclub_ai(f"make a detailed 50 word summary: {part.text}")
+                    if thought_summary is not None:
+                        sp.ok("[✔]")
+                        break
+                    else:
+                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "An error occured, retrying...")
+                        time.sleep(30)
             print_info(thought_summary)
         try:
             for key, value in part.function_call.args.items():
-                function_call[key[9:]] = value
+                function_call[key] = value
         except AttributeError:
             pass
-    function_call = function_call[""]
-    annotated_image = add_bounding_boxes(function_call, image_opencv) #, "solved_worksheet.png")
     
-    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated image?", default=True):
-    if False:
-        cv2.imshow("annotated image", annotated_image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+    bounding_boxes_dict = list_to_dict(function_call["boxes"])
+    annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
 
-    return annotated_image
+    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
 
-#contents = [
-#    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes), types.Part.from_text(text=gemini_prompts[0])]),
-#    types.Content(role="model", parts=[types.Part.from_text(text=("This was a function call: " + str(function_call)))]),
-#    types.Content(role="user", parts=[types.Part.from_bytes(mime_type="image/png", data=worksheet_bytes_modified), types.Part.from_text(text=gemini_prompts[1])]),
-#]
+    answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
-#start_time = time.time()
-#gemini_response = gemini_client.models.generate_content(model=gemini_model, contents=contents, config=generate_content_config)
-#print(f"second api call took {time.time() - start_time} seconds.")
-#function_call = {}
-#for key, value in gemini_response.candidates[0].content.parts[0].function_call.args.items():
-#    function_call[key[9:]] = value
-#function_call = function_call[""]
-#add_bounding_boxes(function_call, worksheet_file_path, "temp/worksheet2.png")
+    solved_worksheet = add_text(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
+
+    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
+    cv2.imwrite("image.png", solved_worksheet)
+
+    return solved_worksheet

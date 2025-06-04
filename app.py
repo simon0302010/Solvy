@@ -2,8 +2,11 @@ from flask import Flask, render_template, request, jsonify
 from logger import *
 import cv2
 import backend
+<<<<<<< HEAD
 import base64
 import uuid
+=======
+>>>>>>> refs/remotes/origin/main
 import os
 
 app = Flask(__name__)

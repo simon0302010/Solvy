@@ -1,3 +1,7 @@
+![Repo Size](https://img.shields.io/github/repo-size/simon0302010/Solvy)
+![Last Commit](https://img.shields.io/github/last-commit/simon0302010/Solvy)
+
+
 **Simon:**
 ![Hackatime Time](https://hackatime-badge.hackclub.com/U08HC7N4JJW/Solvy)
 
@@ -8,7 +12,7 @@
 
 **Solvy** is an AI-powered app designed to automatically solve worksheets.
 
-> ⚠️ **Note**: This project is in **early development** and currently **not functional**. Contributions and feedback are welcome!
+> ⚠️ **Note**: Running the Machine Learning Model locally is currently broken.
 
 ---
 
@@ -16,7 +20,6 @@
 
 - Linux (requirements require modifications to work with other systems)
 - Python 3.11
-- An NVIDIA GPU (for local AI inference) (optional)
 
 ---
 
@@ -37,8 +40,17 @@
    ```bash
    pip install -r requirements_cpu.txt
    ```
-4. **Add your API keys**
+   If you are not running the inference locally:
+   ```bash
+   pip install -r requirements_cloud.txt
+   ```
+3. **Add your API keys**
    ```python
    GEMINI_API_KEY=<YOUR_GEMINI_API_KEY>
    ROBOFLOW_API_KEY=<YOUR_ROBOFLOW_API_KEY>
+   GEMINI_API_KEY_LIST=[<GEMINI_API_KEY_1>, <GEMINI_API_KEY_2>] (optional)
+   ```
+4. **Run the program**
+   ```bash
+   python app.py
    ```

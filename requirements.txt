@@ -5,6 +5,7 @@ Pillow
 flask
 gunicorn
 inference-sdk
+easyocr
 yaspin
 torch==2.2.2 
 torchvision==0.17.2
