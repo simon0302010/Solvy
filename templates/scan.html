@@ -59,7 +59,7 @@
         formData.append('image', file);
     
         const container = document.querySelector(".camera-area");
-        container.innerHTML = '<p class="text-small">Processing</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
+        container.innerHTML = '<p class="text-small">Processing, do not close this tab</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
     
         fetch('/upload', {
             method: 'POST',
@@ -71,17 +71,21 @@
                 // Save to localStorage
                 localStorage.setItem('lastScan', data.image_data);
     
-                // Display it
+                // Display it with an option to download
                 container.innerHTML = `
-                    <p class="text-small">Scanned Image:</p>
-                    <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 300px;">
+                    <p class="text-small">Processed Image: </p>
+                    <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
+                    <br>
+                    <a href="${data.image_data}" download="solved_worksheet.png" class="btn btn-success mt-2">
+                        <i class="bi bi-download"></i> Download
+                    </a>
                 `;
             } else {
                 container.innerHTML = `<p class="text-danger">Error: ${data.error || 'Unknown error'}</p>`;
             }
         })
         .catch(err => {
-            container.innerHTML = `<p class="text-danger">Upload failed</p>`;
+            container.innerHTML = `<p class="text-danger">An error occurred, please try again</p>`;
             console.error(err);
         });
     };
@@ -94,7 +98,11 @@ window.addEventListener('DOMContentLoaded', () => {
     if (lastScan) {
         container.innerHTML = `
             <p class="text-small">Last Scanned Image:</p>
-            <img src="${lastScan}" alt="Processed Image" class="img-fluid rounded" style="max-height: 300px;">
+            <img src="${lastScan}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
+            <br>
+            <a href="${lastScan}" download="scan.png" class="btn btn-success mt-2">
+                <i class="bi bi-download"></i> Download
+            </a>
         `;
     }
 });
