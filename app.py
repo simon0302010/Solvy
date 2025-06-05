@@ -4,7 +4,6 @@ import cv2
 import backend
 import base64
 import uuid
-import sys
 import os
 
 app = Flask(__name__)
@@ -72,5 +71,5 @@ def upload():
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv("PORT", str(sys.argv[1])))
+    port = int(os.getenv("PORT", 4971))
     app.run(debug=True, port=port, host="0.0.0.0")
