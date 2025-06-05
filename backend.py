@@ -117,7 +117,13 @@ def add_text(text_dict, bounding_boxes_dict, font_size, image):
 
 def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
     image_bytes = prepare_image(image_bytes)
-    mean_font_size = get_mean_font_size(image_bytes)
+    with yaspin(text="Getting mean font size", color="green") as sp:
+        try:
+            mean_font_size = get_mean_font_size(image_bytes)
+            sp.ok("[✔]")
+        except:
+            sp.fail("[✖]")
+            mean_font_size = 20
     print_info(f"Mean font size on image is {mean_font_size}")
     nparr = np.frombuffer(image_bytes, np.uint8)
     image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
