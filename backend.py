@@ -120,7 +120,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     image_bytes = prepare_image(image_bytes)
     with yaspin(text="Getting mean font size", color="green") as sp:
         try:
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with concurrent.futures.ProcessPoolExecutor() as executor:
                 future = executor.submit(get_mean_font_size, image_bytes)
                 mean_font_size = future.result(timeout=30)
             sp.ok("[✔]")
