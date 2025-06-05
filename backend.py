@@ -1,5 +1,6 @@
 import io
 import os
+import gc
 import time
 import cv2
 import easyocr
@@ -66,8 +67,11 @@ def prepare_image(image_bytes, max_dim=1024):
     return output.getvalue()
 
 def get_mean_font_size(image_bytes):
+    gc.collect()
     reader = easyocr.Reader(['en'], gpu=False)
-    results = reader.readtext(image_bytes)
+    results = reader.readtext(image_bytes, detail=0)
+    del reader
+    gc.collect()
     heights = [float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
                for bbox, text, conf in results if conf > 0.5]
     return round(statistics.mean(heights) if heights else 0, 1)
@@ -127,6 +131,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     print_info(f"Mean font size on image is {mean_font_size}")
     nparr = np.frombuffer(image_bytes, np.uint8)
     image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    del nparr
     solved_worksheet = image_opencv.copy()
 
     print_info(f"Using {gemini_model_1} to fix the bounding boxes")
