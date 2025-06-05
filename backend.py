@@ -6,7 +6,6 @@ import easyocr
 import requests
 import statistics
 import numpy as np
-import concurrent.futures
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -120,11 +119,9 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     image_bytes = prepare_image(image_bytes)
     with yaspin(text="Getting mean font size", color="green") as sp:
         try:
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                future = executor.submit(get_mean_font_size, image_bytes)
-                mean_font_size = future.result(timeout=30)
+            mean_font_size = get_mean_font_size(image_bytes)
             sp.ok("[✔]")
-        except Exception:
+        except:
             sp.fail("[✖]")
             mean_font_size = 20
     print_info(f"Mean font size on image is {mean_font_size}")
