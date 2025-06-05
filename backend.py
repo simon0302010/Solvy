@@ -38,6 +38,9 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+# Initialize EasyOCR Reader
+easyocr_reader = easyocr.Reader(['en'], gpu=False)
+
 def hackclub_ai(text):
     headers = {"Content-Type": "application/json"}
     json = {"messages": [{"role": "user", "content": str(text)}]}
@@ -68,12 +71,12 @@ def prepare_image(image_bytes, max_dim=1024):
 
 def get_mean_font_size(image_bytes):
     gc.collect()
-    reader = easyocr.Reader(['en'], gpu=False)
-    results = reader.readtext(image_bytes, detail=0)
-    del reader
+    results = easyocr_reader.readtext(image_bytes, detail=0)
+    heights = [
+        float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
+        for bbox, text, conf in results if conf > 0.5
+    ]
     gc.collect()
-    heights = [float(max(p[1] for p in bbox) - min(p[1] for p in bbox))
-               for bbox, text, conf in results if conf > 0.5]
     return round(statistics.mean(heights) if heights else 0, 1)
 
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
