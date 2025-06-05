@@ -67,7 +67,7 @@ def upload():
         return jsonify({'image_data': data_uri, 'id': image_id})
     
     except Exception as e:
-        print_error(f"Error processing image: {e}")
+        print_warn(f"Error processing image: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
 if __name__ == '__main__':

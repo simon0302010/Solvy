@@ -1,7 +1,6 @@
 import io
 import os
 import time
-
 import cv2
 import easyocr
 import requests
@@ -21,7 +20,7 @@ from logger import *
 load_dotenv()
 
 # Define Variables
-inference = "roboflow" # set inference either to roboflow or local
+inference = "roboflow"  # set inference either to roboflow or local
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools_1
 
@@ -40,12 +39,8 @@ gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def hackclub_ai(text):
     headers = {"Content-Type": "application/json"}
-    json = {
-        "messages": [{"role": "user", "content": str(text)}]
-    }
-
+    json = {"messages": [{"role": "user", "content": str(text)}]}
     response = requests.post("https://ai.hackclub.com/chat/completions", headers=headers, json=json)
-    
     if response.status_code == 200:
         return response.json()["choices"][0]["message"]["content"].strip()
     else:
@@ -77,25 +72,25 @@ def get_mean_font_size(image_bytes):
                for bbox, text, conf in results if conf > 0.5]
     return round(statistics.mean(heights) if heights else 0, 1)
 
-# Function to add bounding boxes to any image
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     for idx, bounding_box in enumerate(bounding_box_data):
         start_point = int(bounding_box["xmin"]), int(bounding_box["ymin"])
         end_point = int(bounding_box["xmax"]), int(bounding_box["ymax"])
-        middle_point = int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2) - 7, int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
-        cv2.rectangle(image, start_point, end_point, color=(251,81,163), thickness=2)
-
+        middle_point = (
+            int((int(bounding_box["xmin"]) + int(bounding_box["xmax"])) / 2) - 7,
+            int((int(bounding_box["ymin"]) + int(bounding_box["ymax"])) / 2 + 5)
+        )
+        cv2.rectangle(image, start_point, end_point, color=(251, 81, 163), thickness=2)
         cv2.putText(
             image,
             str(idx + 1),
             middle_point,
             fontFace=cv2.FONT_HERSHEY_DUPLEX,
             fontScale=0.5,
-            color=(0,75,0),
+            color=(0, 75, 0),
             thickness=1,
             lineType=cv2.LINE_AA
         )
-
     if output_filename is not None:
         cv2.imwrite(output_filename, image)
     print_success(f"Added {str(len(bounding_box_data))} bounding boxes")
@@ -104,7 +99,10 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
 def add_text(text_dict, bounding_boxes_dict, font_size, image):
     image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(image_pil)
-    font = ImageFont.truetype("DejaVuSans.ttf", int(font_size))
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", int(font_size))
+    except:
+        font = ImageFont.load_default()
 
     for text_id in text_dict:
         answer_text = str(text_dict[text_id])
@@ -127,7 +125,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
 
     print_info(f"Using {gemini_model_1} to fix the bounding boxes")
     print_info(f"Using {gemini_model_2} to solve the questions")
-    
+
     try:
         inference_result, image_base64 = run_inference(image_bytes)
     except:
@@ -174,7 +172,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                     time.sleep(30)
                 else:
                     raise
-                    
+
     print_info("Thought tokens: " + str(gemini_response.usage_metadata.thoughts_token_count))
     print_info("Output tokens: " + str(gemini_response.usage_metadata.candidates_token_count))
 
@@ -188,7 +186,7 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                         sp.ok("[✔]")
                         break
                     else:
-                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "An error occured, retrying...")
+                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "An error occurred, retrying...")
                         time.sleep(30)
             print_info(thought_summary)
         try:
@@ -196,17 +194,13 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
                 function_call[key] = value
         except AttributeError:
             pass
-    
+
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
-
-    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the annotated worksheet?", default=True): cv2.imshow("Annotated Worksheet", annotated_image); cv2.waitKey(0); cv2.destroyAllWindows()
 
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
     solved_worksheet = add_text(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
-
-    #if click.confirm(bcolors.ORANGE + "[?] " + bcolors.ENDC + "Do you want to view the solved worksheet?", default=True): cv2.imshow("Solved Worksheet", solved_worksheet); cv2.waitKey(0); cv2.destroyAllWindows()
     cv2.imwrite("image.png", solved_worksheet)
 
     return solved_worksheet
