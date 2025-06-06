@@ -70,7 +70,7 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                 ),
                 types.FunctionDeclaration(
                     name="complete_worksheet",
-                    description="Marks the worksheet as complete after all questions have been answered using put_text. Call this function only when every question on the worksheet has been populated with a valid answer.",
+                    description="Marks the worksheet as complete after all questions have been answered using put_text. Call this function only when every question on the worksheet has been populated with a valid answer. If the image you are provided is not a worksheet or the worksheet has no questions, you have to call this function.",
                     parameters=genai.types.Schema(
                         type=genai.types.Type.OBJECT,
                         required=["total_questions"],
