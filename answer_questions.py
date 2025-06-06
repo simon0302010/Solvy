@@ -59,7 +59,7 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                         properties={
                             "text": genai.types.Schema(
                                 type=genai.types.Type.STRING,
-                                description="The answer text to inserted. Latex equations HAVE to be embedded by typing $<LATEX_EXPRESSION_HERE>$. This function is the only option to add text or mathematical expressions to the worksheet. It is a necessary step in the solving of each task that requires an answer.",
+                                description="The answer text to inserted. Latex equations HAVE to be embedded by typing $LATEX_EXPRESSION_HERE$. This function is the only option to add text or mathematical expressions to the worksheet. It is a necessary step in the solving of each task that requires an answer.",
                             ),
                             "question_id": genai.types.Schema(
                                 type=genai.types.Type.NUMBER,
