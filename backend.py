@@ -10,6 +10,8 @@ import numpy as np
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from matplotlib.mathtext import math_to_image
+from matplotlib.font_manager import FontProperties
 from PIL import Image, ImageOps, ImageDraw, ImageFont
 from yaspin import yaspin
 
@@ -52,12 +54,15 @@ if ocr == "easyocr":
     easyocr_reader = easyocr.Reader(['en'], gpu=False)
 
 def hackclub_ai(text):
-    headers = {"Content-Type": "application/json"}
-    json = {"messages": [{"role": "user", "content": str(text)}]}
-    response = requests.post("https://ai.hackclub.com/chat/completions", headers=headers, json=json)
-    if response.status_code == 200:
-        return response.json()["choices"][0]["message"]["content"].strip()
-    else:
+    try:
+        headers = {"Content-Type": "application/json"}
+        json = {"messages": [{"role": "user", "content": str(text)}]}
+        response = requests.post("https://ai.hackclub.com/chat/completions", headers=headers, json=json)
+        if response.status_code == 200:
+            return response.json()["choices"][0]["message"]["content"].strip()
+        else:
+            return None
+    except:
         return None
 
 def list_to_dict(old_list):
@@ -124,7 +129,7 @@ def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     print_success(f"Added {str(len(bounding_box_data))} bounding boxes")
     return image
 
-def add_text(text_dict, bounding_boxes_dict, font_size, image):
+def add_text_normal(text_dict, bounding_boxes_dict, font_size, image):
     image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
     draw = ImageDraw.Draw(image_pil)
     try:
@@ -140,6 +145,48 @@ def add_text(text_dict, bounding_boxes_dict, font_size, image):
             int(answer_bounding_box["ymin"])
         )
         draw.text(text_start, answer_text, font=font, fill=(0, 0, 0))
+
+    return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+
+def add_text_latex(text_dict, bounding_boxes_dict, font_size, image):
+    image_pil = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)).convert("RGBA")
+    font_size = int(round(font_size))
+    font_prop = FontProperties(size=round(font_size * 0.75))
+
+    for text_id in text_dict:
+        answer_text = str(text_dict[text_id])
+        answer_bounding_box = bounding_boxes_dict[text_id]
+        text_start = (
+            int(answer_bounding_box["xmin"]) + 2,
+            int(answer_bounding_box["ymin"])
+        )
+        
+        buffer = io.BytesIO()
+
+        math_to_image(
+            answer_text,
+            buffer,
+            prop=font_prop,
+            format='png'
+        )
+        buffer.seek(0)
+        latex_img = Image.open(buffer).convert("RGBA")
+
+        datas = latex_img.getdata()
+        newData = []
+        for item in datas:
+            if item[0] > 250 and item[1] > 250 and item[2] > 250:
+                newData.append((255, 255, 255, 0))
+            else:
+                newData.append(item)
+        latex_img.putdata(newData)
+
+        smaller_font_size = round(font_size / 2)
+        scale = smaller_font_size / latex_img.height
+        new_width = int(latex_img.width * scale)
+        latex_img = latex_img.resize((new_width, smaller_font_size), Image.LANCZOS)
+
+        image_pil.paste(latex_img, text_start, latex_img)
 
     return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
 
@@ -238,7 +285,9 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
 
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
 
-    solved_worksheet = add_text(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
-    cv2.imwrite("image.png", solved_worksheet)
-
+    if str(answers).count("$") > 1:
+        solved_worksheet = add_text_latex(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
+    else:
+        solved_worksheet = add_text_normal(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
+    
     return solved_worksheet
