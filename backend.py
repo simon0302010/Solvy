@@ -291,6 +291,8 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
         except AttributeError:
             pass
 
+    if len(function_call["boxes"]) == 0:
+        return solved_worksheet
     bounding_boxes_dict = list_to_dict(function_call["boxes"])
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
 
