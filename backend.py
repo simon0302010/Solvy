@@ -14,13 +14,13 @@ from PIL import Image, ImageOps, ImageDraw, ImageFont
 from yaspin import yaspin
 
 from answer_questions import answer_questions
-import click
 import extra_data
 from logger import *
 
 load_dotenv()
 
 # Define Variables
+ocr = "tesseract"
 inference = "roboflow"  # set inference either to roboflow or local
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools_1
@@ -35,11 +35,21 @@ else:
     print_fail('Please set inference to either "roboflow" or "local"')
     exit()
 
+if ocr == "tesseract":
+    print_info("Using Tesseract for OCR")
+    import pytesseract
+elif ocr == "easyocr":
+    print_info("Using EasyOCR for OCR")
+    import easyocr
+else:
+    print('Please set ocr to either "tesseract" or "easyocr"')
+
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Initialize EasyOCR Reader
-easyocr_reader = easyocr.Reader(['en'], gpu=False)
+if ocr == "easyocr":
+    easyocr_reader = easyocr.Reader(['en'], gpu=False)
 
 def hackclub_ai(text):
     headers = {"Content-Type": "application/json"}
@@ -77,6 +87,17 @@ def get_mean_font_size(image_bytes):
         for bbox, text, conf in results if conf > 0.5
     ]
     gc.collect()
+    return round(statistics.mean(heights) if heights else 0, 1)
+
+def get_mean_font_size_tesseract(image_bytes, min_conf=80):
+    image = Image.open(io.BytesIO(image_bytes))
+    image = ImageOps.exif_transpose(image)
+    data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+    heights = [
+        int(data['height'][i])
+        for i in range(len(data['height']))
+        if data['level'][i] == 5 and int(data['conf'][i]) > min_conf and int(data['height'][i]) > 0
+    ]
     return round(statistics.mean(heights) if heights else 0, 1)
 
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
@@ -126,7 +147,10 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     image_bytes = prepare_image(image_bytes)
     with yaspin(text="Getting mean font size", color="green") as sp:
         try:
-            mean_font_size = get_mean_font_size(image_bytes)
+            if ocr == "easyocr":
+                mean_font_size = get_mean_font_size(image_bytes)
+            else:
+                mean_font_size = get_mean_font_size_tesseract(image_bytes)
             sp.ok("[✔]")
         except:
             sp.fail("[✖]")
