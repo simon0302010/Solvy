@@ -5,6 +5,7 @@ Pillow
 flask
 gunicorn
 easyocr
+pytesseract
 yaspin
 inference-sdk
 opencv-python==4.9.0.80
