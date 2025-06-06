@@ -22,7 +22,7 @@ from logger import *
 load_dotenv()
 
 # Define Variables
-ocr = "tesseract"
+ocr = "bounding_boxes"
 inference = "roboflow"  # set inference either to roboflow or local
 gemini_prompts = extra_data.prompts
 gemini_tools = extra_data.tools_1
@@ -43,8 +43,11 @@ if ocr == "tesseract":
 elif ocr == "easyocr":
     print_info("Using EasyOCR for OCR")
     import easyocr
+elif ocr == "bounding_boxes":
+    print_info("Using Bounding Box height for font determination")
+    import easyocr
 else:
-    print('Please set ocr to either "tesseract" or "easyocr"')
+    print('Please set ocr to either "tesseract", "easyocr" or "bounding_boxes"')
 
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
@@ -104,6 +107,12 @@ def get_mean_font_size_tesseract(image_bytes, min_conf=80):
         if data['level'][i] == 5 and int(data['conf'][i]) > min_conf and int(data['height'][i]) > 0
     ]
     return round(statistics.mean(heights) if heights else 0, 1)
+
+def get_mean_bounding_box_height(bounding_box_data):
+    heights = []
+    for bounding_box in bounding_box_data:
+        heights.append(round(int(bounding_box["ymax"]) - int(bounding_box["ymin"])))
+    return round(statistics.mean(heights))
 
 def add_bounding_boxes(bounding_box_data, image, output_filename=None):
     for idx, bounding_box in enumerate(bounding_box_data):
@@ -175,13 +184,16 @@ def add_text_latex(text_dict, bounding_boxes_dict, font_size, image):
         datas = latex_img.getdata()
         newData = []
         for item in datas:
-            if item[0] > 250 and item[1] > 250 and item[2] > 250:
+            if item[0] > 200 and item[1] > 200 and item[2] > 200:
                 newData.append((255, 255, 255, 0))
             else:
                 newData.append(item)
         latex_img.putdata(newData)
 
-        smaller_font_size = round(font_size / 2)
+        if ocr == "tesseract":
+            smaller_font_size = round(font_size * 0.5)
+        else:
+            smaller_font_size = round(font_size * 0.8)
         scale = smaller_font_size / latex_img.height
         new_width = int(latex_img.width * scale)
         latex_img = latex_img.resize((new_width, smaller_font_size), Image.LANCZOS)
@@ -196,13 +208,12 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
         try:
             if ocr == "easyocr":
                 mean_font_size = get_mean_font_size(image_bytes)
-            else:
+            elif ocr == "tesseract":
                 mean_font_size = get_mean_font_size_tesseract(image_bytes)
             sp.ok("[✔]")
         except:
             sp.fail("[✖]")
             mean_font_size = 20
-    print_info(f"Mean font size on image is {mean_font_size}")
     nparr = np.frombuffer(image_bytes, np.uint8)
     image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     del nparr
@@ -284,6 +295,11 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
 
     answers = answer_questions(annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2)
+
+    if ocr == "bounding_boxes":
+        mean_font_size = get_mean_bounding_box_height(function_call["boxes"])
+    
+    print_info(f"Mean font size on image is {mean_font_size}")
 
     if str(answers).count("$") > 1:
         solved_worksheet = add_text_latex(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
