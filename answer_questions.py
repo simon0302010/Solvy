@@ -189,16 +189,17 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
             )
         )
 
-        contents.append(
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_function_response(
-                        name=function_call_name,
-                        response={
-                        "output": func_response
-                        }
-                    )
-                ]
+        if function_call_name:
+            contents.append(
+                types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_function_response(
+                            name=function_call_name,
+                            response={
+                            "output": func_response
+                            }
+                        )
+                    ]
+                )
             )
-        )
