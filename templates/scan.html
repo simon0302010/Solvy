@@ -25,11 +25,19 @@
 
     </div>
 
-    <!-- Floating Scan Button -->
-    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
-    <button class="scan-button" onclick="document.getElementById('cameraInput').click()">
-        <i class="bi bi-camera"></i>
-    </button>
+    <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+        <!-- Floating Scan Button -->
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
+        <button id="scan-btn" class="scan-button" onclick="document.getElementById('cameraInput').click()">
+            <i class="bi bi-camera"></i>
+        </button>
+
+        <!-- Floating Upload Button -->
+        <input type="file" id="uploadInput" accept="image/*" style="display: none;">
+        <button id="upload-btn" class="upload-button" onclick="document.getElementById('uploadInput').click()">
+            <i class="bi bi-upload"></i>
+        </button>
+    </div>
 
     <!-- Bottom Navigation -->
     <div class="bottom-nav">
@@ -54,13 +62,13 @@
     document.getElementById('cameraInput').onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
-    
+
         const formData = new FormData();
         formData.append('image', file);
-    
+
         const container = document.querySelector(".camera-area");
         container.innerHTML = '<p class="text-small">Processing, do not close this tab</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
-    
+
         fetch('/upload', {
             method: 'POST',
             body: formData
@@ -68,10 +76,7 @@
         .then(res => res.json())
         .then(data => {
             if (data.image_data) {
-                // Save to localStorage
                 localStorage.setItem('lastScan', data.image_data);
-    
-                // Display it with an option to download
                 container.innerHTML = `
                     <p class="text-small">Processed Image: </p>
                     <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
@@ -89,24 +94,70 @@
             console.error(err);
         });
     };
-    
-// On page load, show last scanned image if available
-window.addEventListener('DOMContentLoaded', () => {
-    const container = document.querySelector(".camera-area");
-    const lastScan = localStorage.getItem('lastScan');
 
-    if (lastScan) {
-        container.innerHTML = `
-            <p class="text-small">Last Scanned Image:</p>
-            <img src="${lastScan}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
-            <br>
-            <a href="${lastScan}" download="scan.png" class="btn btn-success mt-2">
-                <i class="bi bi-download"></i> Download
-            </a>
-        `;
+    document.getElementById('uploadInput').onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const container = document.querySelector(".camera-area");
+        container.innerHTML = '<p class="text-small">Processing, do not close this tab</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.image_data) {
+                localStorage.setItem('lastScan', data.image_data);
+                container.innerHTML = `
+                    <p class="text-small">Processed Image: </p>
+                    <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
+                    <br>
+                    <a href="${data.image_data}" download="solved_worksheet.png" class="btn btn-success mt-2">
+                        <i class="bi bi-download"></i> Download
+                    </a>
+                `;
+            } else {
+                container.innerHTML = `<p class="text-danger">Error: ${data.error || 'Unknown error'}</p>`;
+            }
+        })
+        .catch(err => {
+            container.innerHTML = `<p class="text-danger">An error occurred, please try again</p>`;
+            console.error(err);
+        });
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const container = document.querySelector(".camera-area");
+        const lastScan = localStorage.getItem('lastScan');
+
+        if (lastScan) {
+            container.innerHTML = `
+                <p class="text-small">Last Scanned Image:</p>
+                <img src="${lastScan}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
+                <br>
+                <a href="${lastScan}" download="scan.png" class="btn btn-success mt-2">
+                    <i class="bi bi-download"></i> Download
+                </a>
+            `;
+        }
+    });
+
+    if (!/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        var scanBtn = document.getElementById('scan-btn');
+        if (scanBtn) {
+            scanBtn.style.display = 'none';
+        }
+        var uploadBtn = document.getElementById('upload-btn');
+        if (uploadBtn) {
+            uploadBtn.style.left = '50%';
+            uploadBtn.style.transform = 'translateX(-50%)';
+        }
     }
-});
-    
 </script>
 </body>
 </html>

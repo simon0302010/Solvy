@@ -80,8 +80,26 @@ body {
 .scan-button {
     position: fixed;
     bottom: 100px;
-    left: 50%;
+    left: calc(45% + 65px);
     transform: translateX(-50%);
+    z-index: 1000;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background-color: white;
+    color: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    border: none;
+}
+
+.upload-button {
+    position: fixed;
+    bottom: 100px;
+    left: calc(45% - 65px);
     z-index: 1000;
     width: 70px;
     height: 70px;

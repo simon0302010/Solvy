@@ -20,10 +20,13 @@
                 <a class="btn btn-custom" id="scan-button" href="/scan">
                     <i class="bi bi-camera"></i> Scan
                 </a>
-                <input type="file" id="uploadInput" accept="image/*,.pdf" style="display: none;">
+                <a class="btn btn-custom" id="upload-button" href="/scan">
+                    <i class="bi bi-upload"></i> Upload
+                </a>
+                <!-- <input type="file" id="uploadInput" accept="image/*,.pdf" style="display: none;">
                 <button class="btn btn-custom" id="upload-button" onclick="document.getElementById('uploadInput').click()">
                     <i class="bi bi-upload"></i> Upload
-                </button>
+                </button> -->
             </div>
         </div>
         {% if uploaded_image %}
@@ -61,14 +64,14 @@
         </a>
     </div>
 <script>
-document.getElementById('uploadInput').onchange = function(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const formData = new FormData();
-        formData.append('image', file);
-        fetch('/upload', { method: 'POST', body: formData });
-    }
-};
+//document.getElementById('uploadInput').onchange = function(e) {
+//    const file = e.target.files[0];
+//    if (file) {
+//        const formData = new FormData();
+//        formData.append('image', file);
+//        fetch('/upload', { method: 'POST', body: formData });
+//    }
+//};
 if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
     const button = document.getElementById('scan-button');
     button.style.display = 'block'; // Corrected from "element"
