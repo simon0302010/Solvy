@@ -13,21 +13,21 @@ app.secret_key = 'your_secret_key'  # Required for session-based features
 def home():
     # Sample questions (static for now)
     questions = [{
-        'type': 'Algebra - Solving Equations',
+        'type': 'Coming Soon',
         'status': 'Solved',
-        'description': 'You scanned a worksheet: Solve for x in the equation 3x - 7 = 11.'
+        'description': 'History Coming Soon'
     }, {
-        'type': 'Geometry - Angles in Triangles',
+        'type': 'Coming Soon',
         'status': 'Solved',
-        'description': 'You scanned a worksheet: Find the missing angle in a triangle if the other two are 45° and 65°.'
+        'description': 'History Coming Soon'
     }, {
-        'type': 'Linear Equations - Word Problem',
+        'type': 'Coming Soon',
         'status': 'Solved',
-        'description': 'Sarah is twice as old as John. Together, their ages add up to 36. How old is each?'
+        'description': 'History Coming Soon'
     }, {
-        'type': 'Quadratic Equations - Factoring',
+        'type': 'Coming Soon',
         'status': 'Solved',
-        'description': 'You scanned a question: Factor the quadratic equation x² - 5x + 6 = 0.'
+        'description': 'History Coming Soon'
     }]
 
     return render_template('home.html', questions=questions)

@@ -40,7 +40,8 @@
                 <span class="status-badge">{{ q.status }}</span>
             </div>
             <p class="mt-2 mb-1">{{ q.description }}</p>
-            <a href="#" class="text-success fw-semibold">View Details</a>
+            <a href="javascript:void(0);" class="text-success fw-semibold"
+            onclick="alert('Details coming soon!');">View Details</a>
         </div>
         {% endfor %}
     </div>
@@ -54,11 +55,13 @@
             <i class="bi bi-camera-fill"></i>
             Scan
         </a>
-        <a href="#" class="text-decoration-none nav-icon">
+        <a href="javascript:void(0);" class="text-decoration-none nav-icon"
+        onclick="alert('Chat feature coming soon!');">
             <i class="bi bi-chat-dots-fill"></i>
             Chat
         </a>
-        <a href="#" class="text-decoration-none nav-icon">
+        <a href="javascript:void(0);" class="text-decoration-none nav-icon"
+        onclick="alert('Settings feature coming soon!');">
             <i class="bi bi-gear-fill"></i>
             Settings
         </a>
@@ -83,7 +86,7 @@ if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(naviga
     button.style.display = 'none'; // Corrected from "element"
     
     const bar = document.getElementById('scan-bar');
-    bar.style.display = 'none'; // Corrected from "element"
+    bar.style.display = 'block'; // Corrected from "element"
 }
 </script>
 </body>
