@@ -82,10 +82,11 @@ def prepare_image(image_bytes, max_dim=1024):
     image = Image.open(io.BytesIO(image_bytes))
     image = ImageOps.exif_transpose(image)
 
-    w, h = image.size
-    scale = min(max_dim / h, max_dim / w, 1.0)
-    if scale < 1.0:
-        image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+    if max_dim > 0:
+        w, h = image.size
+        scale = min(max_dim / h, max_dim / w, 1.0)
+        if scale < 1.0:
+            image = image.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
 
     output = io.BytesIO()
     image.save(output, format="PNG")
@@ -207,7 +208,7 @@ def add_text_latex(text_dict, bounding_boxes_dict, font_size, image):
     return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
 
 def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
-    image_bytes = prepare_image(image_bytes)
+    image_bytes = prepare_image(image_bytes, max_dim=1500)
     with yaspin(text="Getting mean font size", color="green") as sp:
         try:
             if ocr == "easyocr":

@@ -16,12 +16,19 @@ client = InferenceHTTPClient(
 
 def run_inference(image_bytes): #, output_image_path):
     image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+    image_bytes_new = image_bytes
+
+    image_array = np.frombuffer(image_bytes_new, np.uint8)
+    image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
+    _, jpeg_bytes = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+    image_base64_new = base64.b64encode(jpeg_bytes).decode('utf-8')
+
     with yaspin(text="Detecting bounding boxes", color="green") as sp:
         result = client.run_workflow(
             workspace_name="simon0302010",
             workflow_id="custom-workflow",
             images={
-                "image": image_base64
+                "image": image_base64_new
             },
             use_cache=True # cache workflow definition for 15 minutes
         )
