@@ -15,7 +15,6 @@ client = InferenceHTTPClient(
 )
 
 def run_inference(image_bytes): #, output_image_path):
-    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
     image_bytes_new = image_bytes
 
     image_array = np.frombuffer(image_bytes_new, np.uint8)
