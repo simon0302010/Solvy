@@ -28,13 +28,13 @@
     <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
         <!-- Floating Scan Button -->
         <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
-        <button id="scan-btn" class="scan-button" onclick="document.getElementById('cameraInput').click()">
+        <button id="scan-btn" class="scan-button">
             <i class="bi bi-camera"></i>
         </button>
 
         <!-- Floating Upload Button -->
         <input type="file" id="uploadInput" accept="image/*" style="display: none;">
-        <button id="upload-btn" class="upload-button" onclick="document.getElementById('uploadInput').click()">
+        <button id="upload-btn" class="upload-button">
             <i class="bi bi-upload"></i>
         </button>
     </div>
@@ -61,6 +61,38 @@
         </a>
     </div>
 <script>
+    document.getElementById('scan-btn').onclick = function(e) {
+        e.preventDefault();
+        if (confirm(
+            "Important Notice:\n\n" +
+            "Only non-personal data may be uploaded to this website.\n" +
+            "It is strictly prohibited to upload any content that contains personal information such as names, addresses, photos, school names, or any other identifiable data.\n" +
+            "Uploaded files are processed automatically by external AI services by Google, Roboflow and Hackclub and saved afterwards.\n\n" +
+            "By using this service, you confirm that you comply with this requirement.\n\n" +
+            "Do you agree?"
+        )) {
+            document.getElementById('cameraInput').click();
+        } else {
+            window.location.href = "/";
+        }
+    };
+
+    document.getElementById('upload-btn').onclick = function(e) {
+        e.preventDefault();
+        if (confirm(
+            "Important Notice:\n\n" +
+            "Only non-personal data may be uploaded to this website.\n" +
+            "It is strictly prohibited to upload any content that contains personal information such as names, addresses, photos, school names, or any other identifiable data.\n" +
+            "Uploaded files are processed automatically by external AI services by Google, Roboflow and Hackclub and saved afterwards.\n\n" +
+            "By using this service, you confirm that you comply with this requirement.\n\n" +
+            "Do you agree?"
+        )) {
+            document.getElementById('uploadInput').click();
+        } else {
+            window.location.href = "/";
+        }
+    };
+
     document.getElementById('cameraInput').onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
