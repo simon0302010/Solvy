@@ -36,7 +36,7 @@
    ```bash
    pip install -r requirements.txt
    ```
-   If you are using an non-NVIDIA GPU or a CPU:
+   If you are using a non-NVIDIA GPU or a CPU:
    ```bash
    pip install -r requirements_cpu.txt
    ```
@@ -50,7 +50,23 @@
    ROBOFLOW_API_KEY=<YOUR_ROBOFLOW_API_KEY>
    GEMINI_API_KEY_LIST=[<GEMINI_API_KEY_1>, <GEMINI_API_KEY_2>] (optional)
    ```
-4. **Run the program**
+
+4. **Configure Solvy**
+
+   Open `backend.py` and set the following variables at the top of the file:
+
+   ```python
+   # Inference location: "roboflow" (cloud, recommended) or "local" (experimental)
+   inference = "roboflow"
+
+   # Save processed images and results (True/False)
+   save_images = True
+
+   # OCR method: "bounding_boxes" (fastest), "tesseract" (medium), "easyocr" (slowest, but most accurate),
+   ocr = "bounding_boxes"
+   ```
+
+5. **Run the program**
    ```bash
    python app.py
    ```
