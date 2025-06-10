@@ -1,8 +1,9 @@
 import io
 import os
 import gc
-import time
 import cv2
+import time
+import uuid
 import easyocr
 import requests
 import statistics
@@ -53,10 +54,6 @@ else:
 # Initialize Gemini Client
 gemini_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Initialize EasyOCR Reader
-if ocr == "easyocr":
-    easyocr_reader = easyocr.Reader(['en'], gpu=False)
-
 if not os.path.exists("./solved_worksheets") and save_images:
     os.mkdir("solved_worksheets")
 
@@ -93,6 +90,7 @@ def prepare_image(image_bytes, max_dim=1024):
     return output.getvalue()
 
 def get_mean_font_size(image_bytes):
+    easyocr_reader = easyocr.Reader(['en'], gpu=False)
     gc.collect()
     results = easyocr_reader.readtext(image_bytes, detail=0)
     heights = [
@@ -207,7 +205,7 @@ def add_text_latex(text_dict, bounding_boxes_dict, font_size, image):
 
     return cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
 
-def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):
+def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", gemini_model_2="gemini-2.0-flash"):    
     image_bytes = prepare_image(image_bytes, max_dim=1500)
     with yaspin(text="Getting mean font size", color="green") as sp:
         try:
@@ -278,12 +276,13 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
     print_info("Output tokens: " + str(gemini_response.usage_metadata.candidates_token_count))
 
     function_call = {}
+    gemini_thought = ""
     for part in gemini_response.candidates[0].content.parts:
         if part.thought:
             with yaspin(text="Generating thought summary", color="green") as sp:
                 while True:
                     thought_summary = hackclub_ai(f"make a detailed 50 word summary: {part.text}")
-                    thought = part.text
+                    gemini_thought = part.text
                     if thought_summary is not None:
                         sp.ok("[✔]")
                         break
@@ -315,9 +314,9 @@ def process_image(image_bytes, gemini_model_1="gemini-2.5-flash-preview-05-20", 
         solved_worksheet = add_text_normal(answers, bounding_boxes_dict, mean_font_size, solved_worksheet)
     
     if save_images:
-        current_time = round(time.time())
-        cv2.imwrite(f"solved_worksheets/{current_time}.jpg", solved_worksheet, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-        with open(f"solved_worksheets/{current_time}.txt", "w") as file:
-            file.write(str(bounding_boxes_dict) + "\n" + str(thought) + "\n" + str(answers))        
+        unique_id = uuid.uuid4().hex
+        cv2.imwrite(f"solved_worksheets/{unique_id}.jpg", solved_worksheet, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+        with open(f"solved_worksheets/{unique_id}.txt", "w") as file:
+            file.write(str(bounding_boxes_dict) + "\n" + str(gemini_thought) + "\n" + str(answers))        
 
     return solved_worksheet
