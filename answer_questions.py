@@ -1,20 +1,23 @@
-import os
-import cv2
 import ast
-import time
 import base64
-import ms_math
-import extra_data
-from logger import *
-from yaspin import yaspin
+import os
+import time
+
+import cv2
 from google import genai
 from google.genai import types
+from yaspin import yaspin
+
+import extra_data
+import ms_math
+from logger import bcolors, print_info, print_success
 
 prompt = extra_data.prompts[1]
 
+
 def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
-    _, buffer = cv2.imencode('.png', image_opencv)
-    annotated_image_base64 = base64.b64encode(buffer).decode('utf-8')
+    _, buffer = cv2.imencode(".png", image_opencv)
+    annotated_image_base64 = base64.b64encode(buffer).decode("utf-8")
     image_bytes = base64.b64decode(annotated_image_base64)
 
     client = genai.Client(
@@ -29,7 +32,7 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                     mime_type="image/png",
                     data=image_bytes,
                 ),
-                types.Part.from_text(text="\nPossible IDs: " + str(possible_ids))
+                types.Part.from_text(text="\nPossible IDs: " + str(possible_ids)),
             ],
         ),
     ]
@@ -113,30 +116,48 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                     break
                 except Exception as e:
                     if any(code in str(e) for code in ["500", "502", "503"]):
-                        sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Internal Server Error, retrying...")
+                        sp.write(
+                            bcolors.WARNING
+                            + "[!] "
+                            + bcolors.ENDC
+                            + "Internal Server Error, retrying..."
+                        )
                         time.sleep(15)
                     elif "429" in str(e):
                         if os.environ.get("GEMINI_API_KEY_LIST"):
-                            sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, switching API Key...")
-                            api_key_list = ast.literal_eval(os.environ.get("GEMINI_API_KEY_LIST"))
+                            sp.write(
+                                bcolors.WARNING
+                                + "[!] "
+                                + bcolors.ENDC
+                                + "Rate limited, switching API Key..."
+                            )
+                            api_key_list = ast.literal_eval(
+                                os.environ.get("GEMINI_API_KEY_LIST")
+                            )
                             try:
                                 current_index = api_key_list.index(current_api_key)
                             except ValueError:
-                                current_index = 0  # fallback if current_api_key not in list
+                                current_index = (
+                                    0  # fallback if current_api_key not in list
+                                )
                             next_index = (current_index + 1) % len(api_key_list)
                             client = genai.Client(api_key=api_key_list[next_index])
                             current_api_key = api_key_list[next_index]
                         else:
-                            sp.write(bcolors.WARNING + "[!] " + bcolors.ENDC + "Rate limited, waiting for 30 seconds...")
+                            sp.write(
+                                bcolors.WARNING
+                                + "[!] "
+                                + bcolors.ENDC
+                                + "Rate limited, waiting for 30 seconds..."
+                            )
                             time.sleep(30)
                     else:
                         raise
 
-
         function_call = {}
         function_call_name = None
         text_output = None
-        
+
         for part in gemini_response.candidates[0].content.parts:
             if part.text:
                 text_output = str(part.text.strip())
@@ -151,7 +172,9 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
         if text_output is not None:
             print_info("Text Output: " + text_output)
         if function_call_name is not None:
-            print_info("Function Call: " + function_call_name + " = " + str(function_call))
+            print_info(
+                "Function Call: " + function_call_name + " = " + str(function_call)
+            )
 
         if function_call_name == "complete_worksheet":
             print_success("Worksheet Completed")
@@ -160,34 +183,30 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
             math_response = ms_math.solve_latex(str(function_call["latex"]))
             func_response = ""
             if isinstance(math_response, dict):
-                func_response += ("Action: " + str(math_response["actionName"]) + "\n")
-                func_response += ("Solution: " + str(math_response["solution"]).replace("$", ""))
+                func_response += "Action: " + str(math_response["actionName"]) + "\n"
+                func_response += "Solution: " + str(math_response["solution"]).replace(
+                    "$", ""
+                )
                 if "templateSteps" in math_response and math_response["templateSteps"]:
-                    func_response += ("\nSteps: " + str(math_response["templateSteps"][0]))
+                    func_response += "\nSteps: " + str(
+                        math_response["templateSteps"][0]
+                    )
             else:
                 func_response += str(math_response)  # error message as string
         elif function_call_name == "put_text":
             answers[str(function_call["question_id"])] = function_call["text"]
             func_response = "success"
 
-        #print_info("Response from Function Call: " + func_response)
-        #func_response = str(input("Enter function response: "))
+        # print_info("Response from Function Call: " + func_response)
+        # func_response = str(input("Enter function response: "))
 
         model_parts = []
         if text_output is not None:
             model_parts.append(types.Part.from_text(text=text_output))
         model_parts.append(
-            types.Part.from_function_call(
-                name=function_call_name,
-                args=function_call
-            )
+            types.Part.from_function_call(name=function_call_name, args=function_call)
         )
-        contents.append(
-            types.Content(
-                role="model",
-                parts=model_parts
-            )
-        )
+        contents.append(types.Content(role="model", parts=model_parts))
 
         if function_call_name:
             contents.append(
@@ -195,11 +214,8 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
                     role="user",
                     parts=[
                         types.Part.from_function_response(
-                            name=function_call_name,
-                            response={
-                            "output": func_response
-                            }
+                            name=function_call_name, response={"output": func_response}
                         )
-                    ]
+                    ],
                 )
             )

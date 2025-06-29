@@ -3,7 +3,7 @@ from google.genai import types
 
 # ================= PROMPTS ================= #
 prompts = [
-"""
+    """
 I will provide you with an image that shows a worksheet with bounding boxes. I will also provide with
 the coordinates that belong to those bounding boxes. The bounding boxes should enclose the fields to write
 your answer on the worksheet.
@@ -23,7 +23,7 @@ The purple text besides the bounding box is an identifier for the box so you kno
 Here are the coordinates that belong to the bounding boxes you can see in the image:
 
 """,
-"""
+    """
 You are a worksheet solver that must follow these precise instructions: 
 Always respond in the same language as the worksheet provided to maintain consistency throughout the solving process. 
 All mathematical calculations must be performed using the SOLVE_LATEX function with no manual calculations or shortcuts allowed, 
@@ -36,7 +36,7 @@ Follow this workflow: identify all problems on the worksheet, use SOLVE_LATEX fo
 place results using PUT_TEXT with appropriate answer_ids, and work through problems systematically one function call at a time.
 COMPLETE_WORKSHEET HAS TO BE CALLED ONCE THE WORKSHEET IS COMPLETED.
 You can do almost every task using your avaivable tools.
-"""
+""",
 ]
 # ===== FUNCTION CALLING CONFIGURATION ===== #
 tools_1 = [
@@ -46,31 +46,31 @@ tools_1 = [
                 name="createBoundingBox",
                 description="Creates multiple bounding boxes with the given sets of coordinates",
                 parameters=genai.types.Schema(
-                    type = genai.types.Type.OBJECT,
-                    required = ["boxes"],
-                    properties = {
+                    type=genai.types.Type.OBJECT,
+                    required=["boxes"],
+                    properties={
                         "boxes": genai.types.Schema(
-                            type = genai.types.Type.ARRAY,
-                            description = "An array of bounding box coordinate sets.",
-                            items = genai.types.Schema(
-                                type = genai.types.Type.OBJECT,
-                                required = ["ymin", "xmin", "ymax", "xmax"],
-                                properties = {
+                            type=genai.types.Type.ARRAY,
+                            description="An array of bounding box coordinate sets.",
+                            items=genai.types.Schema(
+                                type=genai.types.Type.OBJECT,
+                                required=["ymin", "xmin", "ymax", "xmax"],
+                                properties={
                                     "ymin": genai.types.Schema(
-                                        type = genai.types.Type.INTEGER,
-                                        description = "Top coordinate of the bounding box.",
+                                        type=genai.types.Type.INTEGER,
+                                        description="Top coordinate of the bounding box.",
                                     ),
                                     "xmin": genai.types.Schema(
-                                        type = genai.types.Type.INTEGER,
-                                        description = "Left coordinate of the bounding box.",
+                                        type=genai.types.Type.INTEGER,
+                                        description="Left coordinate of the bounding box.",
                                     ),
                                     "ymax": genai.types.Schema(
-                                        type = genai.types.Type.INTEGER,
-                                        description = "Bottom coordinate of the bounding box.",
+                                        type=genai.types.Type.INTEGER,
+                                        description="Bottom coordinate of the bounding box.",
                                     ),
                                     "xmax": genai.types.Schema(
-                                        type = genai.types.Type.INTEGER,
-                                        description = "Right coordinate of the bounding box.",
+                                        type=genai.types.Type.INTEGER,
+                                        description="Right coordinate of the bounding box.",
                                     ),
                                 },
                             ),
@@ -78,5 +78,6 @@ tools_1 = [
                     },
                 ),
             ),
-        ])
+        ]
+    )
 ]
