@@ -24,24 +24,36 @@
 
   <div class="bottom-nav">
     <a href="/" class="text-decoration-none nav-icon">
-      <i class="bi bi-house-door-fill"></i>
-      Home
+        <i class="bi bi-house-door-fill"></i>
+        Home
     </a>
-    <a href="/scan" class="text-decoration-none nav-icon" id="scan-bar">
-      <i class="bi bi-camera-fill"></i>
-      Scan
+    <a href="/scan" class="text-decoration-none nav-icon active" id="scan-bar">
+        <i id="scan-icon" class="bi bi-camera-fill"></i>
+        <span id="scan-label">Scan</span>
+    </a>        
+    <a href="/chat" class="text-decoration-none nav-icon">
+        <i class="bi bi-chat-dots-fill"></i>
+        Chat
     </a>
-    <a href="javascript:void(0);" class="text-decoration-none nav-icon active">
-      <i class="bi bi-chat-dots-fill"></i>
-      Chat
+    <a href="javascript:void(0);" class="text-decoration-none nav-icon"
+    onclick="alert('Settings feature coming soon!');">
+        <i class="bi bi-gear-fill"></i>
+        Settings
     </a>
-    <a href="javascript:void(0);" class="text-decoration-none nav-icon" onclick="alert('Settings feature coming soon!');">
-      <i class="bi bi-gear-fill"></i>
-      Settings
-    </a>
+</div>
   </div>
 
   <script>
+        // Desktop override for Scan button in bottom nav
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+if (!isMobile) {
+    const scanIcon = document.getElementById('scan-icon');
+    const scanLabel = document.getElementById('scan-label');
+    const scanDir = document.getElementById('scan-dir');
+    if (scanIcon) scanIcon.className = 'bi bi-upload';
+    if (scanLabel) scanLabel.textContent = 'Upload';
+    if (scanDir) scanDir.textContent = 'Tap the upload button to capture a question.';
+}
     document.addEventListener("DOMContentLoaded", () => {
       const container = document.getElementById("chat-history");
       const history = JSON.parse(localStorage.getItem("scanHistory") || "[]");
