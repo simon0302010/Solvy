@@ -7,7 +7,7 @@ from google.genai.types import Content, Part
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-model_name = "models/gemini-1.5-flash"
+model_name = "models/gemma-3-27b-it"
 
 CHAT_DIR = "chats"
 os.makedirs(CHAT_DIR, exist_ok=True)
