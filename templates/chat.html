@@ -27,16 +27,15 @@
         <i class="bi bi-house-door-fill"></i>
         Home
     </a>
-    <a href="/scan" class="text-decoration-none nav-icon active" id="scan-bar">
+    <a href="/scan" class="text-decoration-none nav-icon" id="scan-bar">
         <i id="scan-icon" class="bi bi-camera-fill"></i>
         <span id="scan-label">Scan</span>
     </a>        
-    <a href="/chat" class="text-decoration-none nav-icon">
+    <a href="/chat" class="text-decoration-none nav-icon active">
         <i class="bi bi-chat-dots-fill"></i>
         Chat
     </a>
-    <a href="javascript:void(0);" class="text-decoration-none nav-icon"
-    onclick="alert('Settings feature coming soon!');">
+    <a href="/settings" class="text-decoration-none nav-icon">
         <i class="bi bi-gear-fill"></i>
         Settings
     </a>
@@ -44,7 +43,20 @@
   </div>
 
   <script>
-        // Desktop override for Scan button in bottom nav
+    // Load saved settings
+    window.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+        document.getElementById("darkModeToggle").checked = true;
+      }
+
+      const fontSize = localStorage.getItem("fontSize") || "medium";
+      document.getElementById("fontSizeSelect").value = fontSize;
+      document.body.style.fontSize = fontSizeMap[fontSize];
+
+      document.getElementById("languageSelect").value = localStorage.getItem("language") || "en";
+      document.getElementById("regionInput").value = localStorage.getItem("region") || ""
+    });
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 if (!isMobile) {
     const scanIcon = document.getElementById('scan-icon');

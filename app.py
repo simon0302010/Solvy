@@ -95,6 +95,10 @@ def handle_chat(chat_id):
     history = get_chat_history(chat_id)
     return jsonify({"history": history})
 
+@app.route("/settings")
+def settings():
+    return render_template("settings.html")
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 4971))
     app.run(debug=True, port=port, host="0.0.0.0")

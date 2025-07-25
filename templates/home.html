@@ -12,6 +12,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" sizes="1024x1024" href="/static/images/1024.png">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <script>
+        // On page load, apply saved theme
+        if (localStorage.getItem("darkMode") === "true") {
+          document.documentElement.classList.add("dark");
+        }
+      </script>      
 </head>
 <body>
     <div class="container mt-3">
@@ -62,8 +68,7 @@
             <i class="bi bi-chat-dots-fill"></i>
             Chat
         </a>
-        <a href="javascript:void(0);" class="text-decoration-none nav-icon"
-        onclick="alert('Settings feature coming soon!');">
+        <a href="/settings" class="text-decoration-none nav-icon nav-active">
             <i class="bi bi-gear-fill"></i>
             Settings
         </a>
@@ -95,7 +100,20 @@ window.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+    // Load saved settings
+    window.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+        document.getElementById("darkModeToggle").checked = true;
+      }
 
+      const fontSize = localStorage.getItem("fontSize") || "medium";
+      document.getElementById("fontSizeSelect").value = fontSize;
+      document.body.style.fontSize = fontSizeMap[fontSize];
+
+      document.getElementById("languageSelect").value = localStorage.getItem("language") || "en";
+      document.getElementById("regionInput").value = localStorage.getItem("region") || ""
+    });
 // History management functions
 function loadHistory() {
     const history = JSON.parse(localStorage.getItem('scanHistory') || '[]');
@@ -162,7 +180,54 @@ function clearHistory() {
         loadHistory();
     }
 }
+function loadScanHistory() {
+    const history = JSON.parse(localStorage.getItem('scanHistory') || '[]');
+    const container = document.getElementById('scan-history'); // Make sure this exists in your home.html
+    
+    if (history.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center">No scans yet. <a href="/scan">Scan your first image!</a></p>';
+        return;
+    }
+    
+    container.innerHTML = history.map(item => `
+        <div class="card mb-3">
+            <div class="row g-0">
+                <div class="col-md-4">
+                    <img src="${item.image_data}" class="img-fluid rounded-start" alt="Scanned image" style="height: 150px; object-fit: cover;">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">${item.filename}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                ${new Date(item.timestamp).toLocaleString()} 
+                                • ${item.source === 'camera' ? 'Camera' : 'Upload'}
+                                ${item.status !== 'success' ? ` • ${item.status}` : ''}
+                            </small>
+                        </p>
+                        <div class="btn-group" role="group">
+                            <a href="/chat/${item.chat_id || item.id}" class="btn btn-primary btn-sm" onclick="setImageForChat('${item.id}', '${item.image_data}')">
+                                <i class="bi bi-chat-dots"></i> Chat
+                            </a>
+                            <a href="${item.image_data}" download="${item.filename}" class="btn btn-success btn-sm">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
 
+function setImageForChat(itemId, imageData) {
+    // Set the image for the specific chat session
+    localStorage.setItem(`imageBase64_${itemId}`, imageData);
+    localStorage.setItem('imageBase64', imageData); // Also set globally as fallback
+}
+
+// Load history when page loads
+window.addEventListener('DOMContentLoaded', loadScanHistory);
 function formatDate(timestamp) {
     const date = new Date(timestamp);
     const now = new Date();

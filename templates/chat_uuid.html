@@ -14,73 +14,103 @@
       <h2 class="fw-bold">Chatbot</h2>
     </div>
 
-    <!-- Image preview -->
-    <div class="text-center mb-3">
-      <img id="image-preview" src="" style="max-height: 200px; display: none;" />
+    <!-- Alert for missing image -->
+    <div id="no-image-alert" class="alert alert-warning d-none" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      No image found! Please <a href="/scan" class="alert-link">upload an image</a> first to start chatting.
     </div>
 
+    <!-- Image preview -->
+    <div id="image-preview-container" class="text-center mb-3 d-none">
+      <img id="image-preview" src="" alt="Current image" class="img-thumbnail" style="max-height: 150px;" />
+      <div class="small text-muted mt-1">Current image for analysis</div>
+    </div>
+
+    <!-- Chat messages -->
     <div id="chat-window" class="border rounded p-3 mb-3" style="height: 60vh; overflow-y: auto; background: #f9f9f9;">
       <!-- Messages will be appended here -->
     </div>
 
+    <!-- Chat input -->
     <form id="chat-form" class="d-flex gap-2">
       <input type="text" id="user-input" class="form-control" placeholder="Type a message..." required />
-      <button class="btn btn-primary" type="submit">
+      <button class="btn btn-primary" type="submit" id="send-btn">
         <i class="bi bi-send-fill"></i>
       </button>
     </form>
-  </div>
-  <main id="chat-history" class="mt-4"></main>
-</div>
 
-<div class="bottom-nav">
+    <!-- Button to change image -->
+    <div class="text-center mt-2">
+      <a href="/scan" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-camera"></i> Change Image
+      </a>
+    </div>
+  </div>
+
+  <!-- Bottom navigation -->
+  <div class="bottom-nav">
     <a href="/" class="text-decoration-none nav-icon">
-        <i class="bi bi-house-door-fill"></i>
-        Home
+      <i class="bi bi-house-door-fill"></i>
+      Home
     </a>
-    <a href="/scan" class="text-decoration-none nav-icon active" id="scan-bar">
-        <i id="scan-icon" class="bi bi-camera-fill"></i>
-        <span id="scan-label">Scan</span>
-    </a>        
-    <a href="/chat" class="text-decoration-none nav-icon">
-        <i class="bi bi-chat-dots-fill"></i>
-        Chat
+    <a href="/scan" class="text-decoration-none nav-icon" id="scan-bar">
+      <i id="scan-icon" class="bi bi-camera-fill"></i>
+      <span id="scan-label">Scan</span>
     </a>
-    <a href="javascript:void(0);" class="text-decoration-none nav-icon"
-    onclick="alert('Settings feature coming soon!');">
-        <i class="bi bi-gear-fill"></i>
-        Settings
+    <a href="/chat" class="text-decoration-none nav-icon active">
+      <i class="bi bi-chat-dots-fill"></i>
+      Chat
     </a>
-</div>
+    <a href="/settings" class="text-decoration-none nav-icon">
+      <i class="bi bi-gear-fill"></i>
+      Settings
+    </a>
+  </div>
+
   <script>
-        // Desktop override for Scan button in bottom nav
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-if (!isMobile) {
-    const scanIcon = document.getElementById('scan-icon');
-    const scanLabel = document.getElementById('scan-label');
-    const scanDir = document.getElementById('scan-dir');
-    if (scanIcon) scanIcon.className = 'bi bi-upload';
-    if (scanLabel) scanLabel.textContent = 'Upload';
-    if (scanDir) scanDir.textContent = 'Tap the upload button to capture a question.';
-}
     const chatId = "{{ chat_id }}";
     const chatWindow = document.getElementById("chat-window");
     const input = document.getElementById("user-input");
     const form = document.getElementById("chat-form");
-    const preview = document.getElementById("image-preview");
+    const sendBtn = document.getElementById("send-btn");
+    const noImageAlert = document.getElementById("no-image-alert");
+    const imagePreviewContainer = document.getElementById("image-preview-container");
+    const imagePreview = document.getElementById("image-preview");
 
-    // Copy uploaded image from sessionStorage (if available)
-    const uploadedImage = sessionStorage.getItem("uploadedImage");
-    if (uploadedImage) {
-      localStorage.setItem("imageBase64", uploadedImage);
-      sessionStorage.removeItem("uploadedImage");
-    }
+    let imageBase64 = null;
 
-    // Set preview if image exists
-    const imageBase64 = localStorage.getItem("imageBase64");
-    if (imageBase64) {
-      preview.src = imageBase64;
-      preview.style.display = "block";
+    function checkForImage() {
+      console.log("Checking for image in localStorage...");
+      
+      // First try to get image specific to this chat ID
+      imageBase64 = localStorage.getItem(`imageBase64_${chatId}`);
+      
+      // If not found, try general keys
+      if (!imageBase64) {
+        imageBase64 = localStorage.getItem("imageBase64") || 
+                     localStorage.getItem("lastScan");
+      }
+      
+      console.log("Chat ID:", chatId);
+      console.log("Image found:", !!imageBase64);
+      console.log("Image length:", imageBase64 ? imageBase64.length : 0);
+      
+      if (!imageBase64 || imageBase64 === 'undefined' || imageBase64 === 'null') {
+        console.log("No valid image found - disabling chat");
+        noImageAlert.classList.remove("d-none");
+        form.classList.add("d-none");
+        imagePreviewContainer.classList.add("d-none");
+        return false;
+      } else {
+        console.log("Valid image found - enabling chat");
+        noImageAlert.classList.add("d-none");
+        form.classList.remove("d-none");
+        
+        // Show image preview
+        imagePreview.src = imageBase64;
+        imagePreviewContainer.classList.remove("d-none");
+        return true;
+      }
     }
 
     function appendMessage(role, text) {
@@ -90,7 +120,7 @@ if (!isMobile) {
       const bubble = document.createElement("div");
       bubble.className = role === "user" ? "text-end" : "text-start";
       bubble.innerHTML = `
-        <span class="badge ${role === "user" ? "bg-primary" : "bg-success"}">
+        <span class="badge ${role === "user" ? "bg-primary" : "bg-success"}" style="white-space: pre-wrap; text-align: left; max-width: 80%; display: inline-block;">
           ${text}
         </span>
       `;
@@ -104,36 +134,51 @@ if (!isMobile) {
       try {
         const res = await fetch(`/api/chat/${chatId}`);
         const data = await res.json();
-        data.history.forEach((m) => appendMessage(m.role, m.text));
+        data.history.forEach(m => appendMessage(m.role, m.text));
       } catch (err) {
-        appendMessage("model", "Failed to load chat history.");
+        appendMessage("model", "⚠️ Failed to load chat history.");
       }
     }
 
     async function sendMessage(text) {
-      appendMessage("user", text);
-      input.value = "";
-
-      const imageBase64 = localStorage.getItem("imageBase64") || null;
       if (!imageBase64) {
-        appendMessage("model", "⚠️ No image found. Please scan or upload first.");
+        appendMessage("model", "⚠️ No image found. Please upload an image first.");
         return;
       }
+
+      console.log("Sending message with image");
+      console.log("Message:", text);
+      console.log("Image length:", imageBase64.length);
+      console.log("Image starts with data:", imageBase64.startsWith('data:'));
+
+      appendMessage("user", text);
+      input.value = "";
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
 
       try {
         const res = await fetch(`/api/chat/${chatId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text, image_base64: imageBase64 }),
+          body: JSON.stringify({ message: text, image_base64: imageBase64 })
         });
+
         const data = await res.json();
-        if (data.reply) {
+        console.log("Response:", data);
+
+        if (data.error) {
+          appendMessage("model", `❌ Error: ${data.error}`);
+        } else if (data.reply) {
           appendMessage("model", data.reply);
         } else {
-          appendMessage("model", "❌ Gemini failed to reply.");
+          appendMessage("model", "❌ No reply received from Gemini.");
         }
       } catch (err) {
-        appendMessage("model", "Something went wrong. Try again.");
+        console.error("Chat error:", err);
+        appendMessage("model", "❌ Something went wrong. Try again.");
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="bi bi-send-fill"></i>';
       }
     }
 
@@ -143,7 +188,44 @@ if (!isMobile) {
       if (text) sendMessage(text);
     });
 
-    loadHistory();
+    // Font size and theme handling
+    const fontSizeMap = {
+      small: "14px",
+      medium: "16px",
+      large: "18px"
+    };
+
+    window.addEventListener("DOMContentLoaded", () => {
+      // Dark mode
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+      }
+
+      // Font size
+      const fontSize = localStorage.getItem("fontSize") || "medium";
+      document.body.style.fontSize = fontSizeMap[fontSize];
+
+      // Desktop override for scan button
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (!isMobile) {
+        const scanIcon = document.getElementById("scan-icon");
+        const scanLabel = document.getElementById("scan-label");
+        if (scanIcon) scanIcon.className = "bi bi-upload";
+        if (scanLabel) scanLabel.textContent = "Upload";
+      }
+
+      // Check for image and load chat
+      if (checkForImage()) {
+        loadHistory();
+      }
+    });
+
+    // Listen for storage changes (if user uploads image in another tab)
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'imageBase64' || e.key === 'lastScan') {
+        checkForImage();
+      }
+    });
   </script>
 </body>
 </html>
