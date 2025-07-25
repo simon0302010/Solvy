@@ -2,6 +2,7 @@ import ast
 import base64
 import os
 import time
+import json
 
 import cv2
 from google import genai
@@ -10,7 +11,7 @@ from yaspin import yaspin
 
 import extra_data
 import ms_math
-from logger import bcolors, print_info, print_success
+from logger import bcolors, print_info, print_success, print_warn
 
 prompt = extra_data.prompts[1]
 
@@ -19,11 +20,10 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
     _, buffer = cv2.imencode(".png", image_opencv)
     annotated_image_base64 = base64.b64encode(buffer).decode("utf-8")
     image_bytes = base64.b64decode(annotated_image_base64)
-
+    current_api_key = os.environ.get("GEMINI_API_KEY2")
     client = genai.Client(
-        api_key=os.environ.get("GEMINI_API_KEY"),
+        api_key=current_api_key,
     )
-    current_api_key = os.environ.get("GEMINI_API_KEY")
     contents = [
         types.Content(
             role="user",
@@ -180,25 +180,56 @@ def answer_questions(image_opencv, possible_ids, model="gemini-2.0-flash"):
             print_success("Worksheet Completed")
             return answers
         elif function_call_name == "solve_latex":
-            math_response = ms_math.solve_latex(str(function_call["latex"]))
-            func_response = ""
-            if isinstance(math_response, dict):
-                func_response += "Action: " + str(math_response["actionName"]) + "\n"
-                func_response += "Solution: " + str(math_response["solution"]).replace(
-                    "$", ""
-                )
-                if "templateSteps" in math_response and math_response["templateSteps"]:
-                    func_response += "\nSteps: " + str(
-                        math_response["templateSteps"][0]
-                    )
-            else:
-                func_response += str(math_response)  # error message as string
+            # Enhanced error handling for ms_math.solve_latex
+            try:
+                print_info(f"Calling ms_math.solve_latex with: {function_call['latex']}")
+                math_response = ms_math.solve_latex(str(function_call["latex"]))
+                print_info(f"ms_math response type: {type(math_response)}")
+                print_info(f"ms_math response: {math_response}")
+                
+                func_response = ""
+                if isinstance(math_response, dict):
+                    func_response += "Action: " + str(math_response.get("actionName", "Unknown")) + "\n"
+                    solution = math_response.get("solution", "No solution")
+                    func_response += "Solution: " + str(solution).replace("$", "")
+                    if "templateSteps" in math_response and math_response["templateSteps"]:
+                        func_response += "\nSteps: " + str(math_response["templateSteps"][0])
+                elif isinstance(math_response, str):
+                    func_response = math_response
+                else:
+                    # Fallback: try to manually calculate simple arithmetic
+                    latex_expr = str(function_call["latex"])
+                    print_warn(f"ms_math failed, attempting manual calculation for: {latex_expr}")
+                    
+                    # Simple arithmetic fallback
+                    try:
+                        # Remove LaTeX formatting and evaluate simple expressions
+                        clean_expr = latex_expr.replace("$", "").replace(" ", "")
+                        # Only allow basic arithmetic operations
+                        if all(c in "0123456789+-*/.() " for c in clean_expr):
+                            result = eval(clean_expr)
+                            func_response = f"Manual calculation result: {result}"
+                            print_info(f"Manual calculation successful: {result}")
+                        else:
+                            func_response = f"Error: Cannot solve mathematical expression '{latex_expr}'. Please try a simpler expression."
+                    except Exception as calc_error:
+                        print_warn(f"Manual calculation failed: {calc_error}")
+                        func_response = f"Error: Unable to solve mathematical expression '{latex_expr}'"
+                        
+            except json.JSONDecodeError as json_error:
+                print_warn(f"JSON decode error in ms_math.solve_latex: {json_error}")
+                func_response = f"Error: Invalid response from math solver for '{function_call['latex']}'"
+            except Exception as math_error:
+                print_warn(f"Error in ms_math.solve_latex: {math_error}")
+                func_response = f"Error: Math solver failed for '{function_call['latex']}'"
+                
         elif function_call_name == "put_text":
             answers[str(function_call["question_id"])] = function_call["text"]
             func_response = "success"
+        else:
+            func_response = "Unknown function call"
 
-        # print_info("Response from Function Call: " + func_response)
-        # func_response = str(input("Enter function response: "))
+        print_info("Response from Function Call: " + func_response)
 
         model_parts = []
         if text_output is not None:

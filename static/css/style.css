@@ -1,7 +1,10 @@
 body {
     background-color: #1c1b1e;
-    color: white;
+    color: white !important;
     padding-bottom: 100px; /* Kept the larger value for safety */
+}
+.container {
+    color: white;
 }
 
 .top-bar {
@@ -118,3 +121,31 @@ a.text-success {
     text-decoration: none;
 }
 
+.text-white {
+    color: white;
+}
+/* Hide/Show for platform-specific rendering */
+.desktop-icon,
+.desktop-text {
+    display: none;
+}
+
+.mobile-icon,
+.mobile-text {
+    display: inline;
+}
+
+@media (min-width: 768px) {
+    .desktop-icon,
+    .desktop-text {
+        display: inline !important;
+    }
+    .mobile-icon,
+    .mobile-text {
+        display: none !important;
+    }
+}
+
+.status-badge {
+    text-align: end !important;
+}

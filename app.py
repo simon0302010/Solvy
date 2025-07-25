@@ -14,30 +14,9 @@ app.secret_key = "your_secret_key"  # Required for session-based features
 
 @app.route("/")
 def home():
-    # Sample questions (static for now)
-    questions = [
-        {
-            "type": "Coming Soon",
-            "status": "Solved",
-            "description": "History Coming Soon",
-        },
-        {
-            "type": "Coming Soon",
-            "status": "Solved",
-            "description": "History Coming Soon",
-        },
-        {
-            "type": "Coming Soon",
-            "status": "Solved",
-            "description": "History Coming Soon",
-        },
-        {
-            "type": "Coming Soon",
-            "status": "Solved",
-            "description": "History Coming Soon",
-        },
-    ]
-
+    # History will now be loaded from localStorage via JavaScript
+    # This is just a fallback for when localStorage is empty
+    questions = []
     return render_template("home.html", questions=questions)
 
 
@@ -71,10 +50,16 @@ def upload():
         base64_image = base64.b64encode(encoded_image.tobytes()).decode("utf-8")
         data_uri = f"data:image/png;base64,{base64_image}"
 
-        # Optionally track with UUID (not required unless for analytics)
+        # Generate UUID for tracking
         image_id = str(uuid.uuid4())
-
-        return jsonify({"image_data": data_uri, "id": image_id})
+        
+        # Return additional metadata for history tracking
+        return jsonify({
+            "image_data": data_uri, 
+            "id": image_id,
+            "timestamp": None,  # Will be set by JavaScript
+            "filename": file.filename or "uploaded_image.png"
+        })
 
     except Exception as e:
         print_warn(f"Error processing image: {e}")
