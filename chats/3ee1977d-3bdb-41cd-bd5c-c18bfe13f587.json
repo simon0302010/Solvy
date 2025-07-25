@@ -1,0 +1,114 @@
+[
+  {
+    "role": "user",
+    "text": "hello! solve the problems"
+  },
+  {
+    "role": "model",
+    "text": "Okay, I'm ready to help when you are."
+  },
+  {
+    "role": "user",
+    "text": "yes explain in detail"
+  },
+  {
+    "role": "model",
+    "text": "Okay, I understand.  I'm ready to help you solve the problems when you're ready. Just let me know."
+  },
+  {
+    "role": "user",
+    "text": "yes im ready"
+  },
+  {
+    "role": "model",
+    "text": "Okay, I'm ready when you are.  Let me know if you want me to solve any of the problems."
+  },
+  {
+    "role": "user",
+    "text": "1st one"
+  },
+  {
+    "role": "model",
+    "text": "Great!  Just let me know which problems you'd like me to work through, and I'll explain the steps in detail."
+  },
+  {
+    "role": "user",
+    "text": "I said 1st problem"
+  },
+  {
+    "role": "model",
+    "text": "Okay, which problem from the worksheet would you like me to explain?  Just give me the problem number."
+  },
+  {
+    "role": "user",
+    "text": "1"
+  },
+  {
+    "role": "model",
+    "text": "Okay, problem 1.  We need to find the missing number that, when added to 54, equals 54.  What number added to 54 results in a sum of 54?"
+  },
+  {
+    "role": "user",
+    "text": "0"
+  },
+  {
+    "role": "model",
+    "text": "The answer is 0.  54 + 0 = 54"
+  },
+  {
+    "role": "user",
+    "text": "next"
+  },
+  {
+    "role": "model",
+    "text": "Yes, the answer to problem 1 is 0.  Do you want to move on to another problem?"
+  },
+  {
+    "role": "user",
+    "text": "yes"
+  },
+  {
+    "role": "model",
+    "text": "Okay, let's move on to the next problem.  Which one would you like to do?"
+  },
+  {
+    "role": "user",
+    "text": "2"
+  },
+  {
+    "role": "model",
+    "text": "Okay, let's do problem 2.  We need to find the missing number that, when added to 66, equals a certain number. The sum is represented by a blank space. What number added to 66 equals that missing number at the bottom?  To solve this, we need the total.  Can you tell me what the total is supposed to be for problem 2?"
+  },
+  {
+    "role": "user",
+    "text": "2 is 66+1"
+  },
+  {
+    "role": "model",
+    "text": "The problem shows 66 +  __ =  ?.  We need the total to find the missing number. What is the total (the number at the bottom of the problem)?"
+  },
+  {
+    "role": "user",
+    "text": "no, it says 66+1"
+  },
+  {
+    "role": "model",
+    "text": "You're right, the problem is 66 + __ = ?  I need the total, the number that goes in the bottom blank space.  What is that number?"
+  },
+  {
+    "role": "user",
+    "text": "NO! IT SAYS 66+1!"
+  },
+  {
+    "role": "model",
+    "text": "Ah, I see.  The problem is 66 + 1 = __.  Therefore, the missing number is 67.  Is that correct?"
+  },
+  {
+    "role": "user",
+    "text": "yes!"
+  },
+  {
+    "role": "model",
+    "text": "Yes, the answer to problem 2 is 67.  66 + 1 = 67.  What problem would you like to work on next?"
+  }
+]

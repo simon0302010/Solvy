@@ -108,102 +108,88 @@ if (!isMobile) {
         localStorage.setItem('scanHistory', JSON.stringify(history));
         console.log('Saved to history:', historyItem)
     }
+    function goToChat() {
+                        // Just a safeguard: store again if somehow it's not in session
+                        const img = localStorage.getItem('imageBase64');
+                        if (img) sessionStorage.setItem('uploadedImage', img);
+                        // Use UUID or redirect to new chat
+                        window.location.href = "/chat/" + crypto.randomUUID();
+                        }
 
     function processImageUpload(file, isCamera = false) {
-        const formData = new FormData();
-        formData.append('image', file);
+    const formData = new FormData();
+    formData.append('image', file);
 
-        const container = document.querySelector(".camera-area");
-        container.innerHTML = '<p class="text-small">Processing, do not close this tab</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
+    const container = document.querySelector(".camera-area");
+    container.innerHTML = '<p class="text-small">Processing, do not close this tab</p><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div>';
 
-        fetch('/upload', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => {
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-            }
-            return res.json();
-        })
-        .then(data => {
-            if (data.image_data) {
-                // Store current scan
-                localStorage.setItem('lastScan', data.image_data);
-                
-                // Add to history with additional metadata
-                const historyItem = {
-                    id: data.id,
-                    image_data: data.image_data,
-                    filename: data.filename || file.name,
-                    source: isCamera ? 'camera' : 'upload',
-                    timestamp: new Date().toISOString(),
-                    status: 'success'
-                };
-                
-                saveToHistory(historyItem);
-                
-                container.innerHTML = `
-                    <div class="text-center">
-                        <p class="text-small">✅ Processed Successfully</p>
-                        <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
-                        <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
-                            <a href="${data.image_data}" download="solved_worksheet.png" class="btn btn-success">
-                                <i class="bi bi-download"></i> Download
-                            </a>
-                            <a href="/" class="btn btn-primary">
-                                <i class="bi bi-house-door"></i> View History
-                            </a>
-                            <button class="btn btn-outline-secondary" onclick="location.reload()">
-                                <i class="bi bi-arrow-clockwise"></i> Scan Again
-                            </button>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // Even if processing failed, let's try to save the original image to history
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const originalImageData = e.target.result;
-                    const historyItem = {
-                        id: data.id || 'failed-' + Date.now(),
-                        image_data: originalImageData,
-                        filename: file.name,
-                        source: isCamera ? 'camera' : 'upload',
-                        timestamp: new Date().toISOString(),
-                        status: 'failed',
-                        error: data.error || 'Processing failed'
-                    };
-                    saveToHistory(historyItem);
-                };
-                reader.readAsDataURL(file);
-                
-                container.innerHTML = `
-                    <div class="text-center">
-                        <p class="text-danger">❌ Error: ${data.error || 'Unknown error'}</p>
-                        <p class="text-muted small">Original image saved to history</p>
-                        <button class="btn btn-primary" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise"></i> Try Again
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.image_data) {
+            // Store current scan for display purposes
+            localStorage.setItem('lastScan', data.image_data);
+            
+            // IMPORTANT: Store for chat functionality with the correct key
+            localStorage.setItem('imageBase64', data.image_data);
+            
+            // Add to history with additional metadata
+            const historyItem = {
+                id: data.id,
+                image_data: data.image_data,
+                filename: data.filename || file.name,
+                source: isCamera ? 'camera' : 'upload',
+                timestamp: new Date().toISOString(),
+                status: 'success'
+            };
+            
+            saveToHistory(historyItem);
+            
+            container.innerHTML = `
+                <div class="text-center">
+                    <p class="text-small">✅ Processed Successfully</p>
+                    <img src="${data.image_data}" alt="Processed Image" class="img-fluid rounded" style="max-height: 400px;">
+                    <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
+                        <a href="${data.image_data}" download="solved_worksheet.png" class="btn btn-success">
+                            <i class="bi bi-download"></i> Download
+                        </a>
+                        <a href="/" class="btn btn-primary">
+                            <i class="bi bi-house-door"></i> View History
+                        </a>
+                        <button class="btn btn-outline-secondary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Scan Again
+                        </button>
+                        <button class="btn btn-info" onclick="goToChat()">
+                        <i class="bi bi-chat-dots"></i> Start Chat
                         </button>
                     </div>
-                `;
-            }
-        })
-        .catch(err => {
-            console.error('Upload error:', err);
-            
-            // Even on network/server error, try to save the original image
+                </div>
+            `;
+        } else {
+            // Even if processing failed, let's try to save the original image to history
             const reader = new FileReader();
             reader.onload = function(e) {
                 const originalImageData = e.target.result;
+                
+                // Store original image for chat if processing failed
+                localStorage.setItem('imageBase64', originalImageData);
+                
                 const historyItem = {
-                    id: 'error-' + Date.now(),
+                    id: data.id || 'failed-' + Date.now(),
                     image_data: originalImageData,
                     filename: file.name,
                     source: isCamera ? 'camera' : 'upload',
                     timestamp: new Date().toISOString(),
-                    status: 'error',
-                    error: err.message || 'Network/Server error'
+                    status: 'failed',
+                    error: data.error || 'Processing failed'
                 };
                 saveToHistory(historyItem);
             };
@@ -211,15 +197,60 @@ if (!isMobile) {
             
             container.innerHTML = `
                 <div class="text-center">
-                    <p class="text-danger">❌ An error occurred, please try again</p>
-                    <p class="text-muted small">Original image saved to history</p>
+                    <p class="text-danger">❌ Error: ${data.error || 'Unknown error'}</p>
+                    <p class="text-muted small">Original image saved - you can still chat about it</p>
+                    <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
+                        <button class="btn btn-primary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Try Again
+                        </button>
+                        <a href="/chat" class="btn btn-info">
+                            <i class="bi bi-chat-dots"></i> Chat About Image
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+    })
+    .catch(err => {
+        console.error('Upload error:', err);
+        
+        // Even on network/server error, try to save the original image
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const originalImageData = e.target.result;
+            
+            // Store original image for chat
+            localStorage.setItem('imageBase64', originalImageData);
+            
+            const historyItem = {
+                id: 'error-' + Date.now(),
+                image_data: originalImageData,
+                filename: file.name,
+                source: isCamera ? 'camera' : 'upload',
+                timestamp: new Date().toISOString(),
+                status: 'error',
+                error: err.message || 'Network/Server error'
+            };
+            saveToHistory(historyItem);
+        };
+        reader.readAsDataURL(file);
+        
+        container.innerHTML = `
+            <div class="text-center">
+                <p class="text-danger">❌ An error occurred, please try again</p>
+                <p class="text-muted small">Original image saved - you can still chat about it</p>
+                <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
                     <button class="btn btn-primary" onclick="location.reload()">
                         <i class="bi bi-arrow-clockwise"></i> Try Again
                     </button>
+                    <a href="/chat" class="btn btn-info">
+                        <i class="bi bi-chat-dots"></i> Chat About Image
+                    </a>
                 </div>
-            `;
-        });
-    }
+            </div>
+        `;
+    });
+}
 
     document.getElementById('scan-btn').onclick = function(e) {
         e.preventDefault();
