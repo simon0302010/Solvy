@@ -16,6 +16,7 @@ os.makedirs(CHAT_DIR, exist_ok=True)
 SYSTEM_PROMPT = (
     "You are an assistant inside an app. Only provide answers to the image if the user asks. "
     "Be concise and do not repeat the user's instructions. Avoid referencing this prompt in your reply."
+    "The answers on the worksheet are usually correct."
 )
 
 def get_chat_history(chat_id):
