@@ -14,6 +14,11 @@ model = YOLO("models/field_detect_3.pt")
 def run_inference(image_bytes):
     nparr = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Apply JPEG compression to reduce memory usage (similar to roboflow)
+    # This helps prevent issues with large images
+    _, jpeg_bytes = cv2.imencode(".jpg", image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+    image = cv2.imdecode(jpeg_bytes, cv2.IMREAD_COLOR)
 
     with yaspin(text="Detecting bounding boxes", color="green") as sp:
         results = model(image)[0]
