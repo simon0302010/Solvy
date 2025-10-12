@@ -221,32 +221,47 @@ def process_image(
     gemini_model_1="gemini-2.5-flash-preview-05-20",
     gemini_model_2="gemini-2.0-flash",
 ):
-    image_bytes = prepare_image(image_bytes, max_dim=1500)
+    # Keep original image for final output
+    original_image = Image.open(io.BytesIO(image_bytes))
+    original_image = ImageOps.exif_transpose(original_image)
+    original_width, original_height = original_image.size
+    
+    # Prepare resized image for processing (to reduce memory usage)
+    image_bytes_resized = prepare_image(image_bytes, max_dim=1500)
+    
+    # Calculate scale factor for later use
+    nparr_temp = np.frombuffer(image_bytes_resized, np.uint8)
+    resized_image = cv2.imdecode(nparr_temp, cv2.IMREAD_COLOR)
+    resized_height, resized_width = resized_image.shape[:2]
+    scale_x = original_width / resized_width
+    scale_y = original_height / resized_height
+    del nparr_temp
+    
     with yaspin(text="Getting mean font size", color="green") as sp:
         try:
             if ocr == "easyocr":
-                mean_font_size = get_mean_font_size(image_bytes)
+                mean_font_size = get_mean_font_size(image_bytes_resized)
             elif ocr == "tesseract":
-                mean_font_size = get_mean_font_size_tesseract(image_bytes)
+                mean_font_size = get_mean_font_size_tesseract(image_bytes_resized)
             sp.ok("[✔]")
         except:
             sp.fail("[✖]")
             mean_font_size = 20
-    nparr = np.frombuffer(image_bytes, np.uint8)
-    image_opencv = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    del nparr
-    solved_worksheet = image_opencv.copy()
+    
+    # Convert original image to opencv format for final output
+    original_image_cv = cv2.cvtColor(np.array(original_image), cv2.COLOR_RGB2BGR)
+    solved_worksheet = original_image_cv.copy()
 
     print_info(f"Using {gemini_model_1} to fix the bounding boxes")
     print_info(f"Using {gemini_model_2} to solve the questions")
 
     try:
-        inference_result, image_base64 = run_inference(image_bytes)
+        inference_result, image_base64 = run_inference(image_bytes_resized)
     except:
         inference_result = (
             "No bounding boxes detected. Please place the bounding boxes yourself."
         )
-        image_base64 = image_bytes
+        image_base64 = image_bytes_resized
 
     gemini_contents = [
         types.Content(
@@ -335,15 +350,29 @@ def process_image(
 
     if len(function_call["boxes"]) == 0:
         return solved_worksheet
-    bounding_boxes_dict = list_to_dict(function_call["boxes"])
-    annotated_image = add_bounding_boxes(function_call["boxes"], image_opencv)
+    
+    # Scale bounding boxes from resized image to original resolution
+    scaled_boxes = []
+    for box in function_call["boxes"]:
+        scaled_box = {
+            "xmin": int(box["xmin"] * scale_x),
+            "ymin": int(box["ymin"] * scale_y),
+            "xmax": int(box["xmax"] * scale_x),
+            "ymax": int(box["ymax"] * scale_y),
+        }
+        scaled_boxes.append(scaled_box)
+    
+    bounding_boxes_dict = list_to_dict(scaled_boxes)
+    annotated_image = add_bounding_boxes(scaled_boxes, original_image_cv)
 
     answers = answer_questions(
         annotated_image, list(bounding_boxes_dict.keys()), model=gemini_model_2
     )
 
     if ocr == "bounding_boxes":
-        mean_font_size = get_mean_bounding_box_height(function_call["boxes"])
+        mean_font_size = get_mean_bounding_box_height(scaled_boxes)
+        # Scale font size to original resolution
+        mean_font_size = int(mean_font_size)
 
     print_info(f"Mean font size on image is {mean_font_size}")
 

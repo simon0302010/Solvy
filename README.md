@@ -22,8 +22,6 @@
 
 **Solvy** is an AI-powered app designed to automatically solve worksheets.
 
-> ⚠️ **Note**: Running the Machine Learning Model locally is currently broken.
-
 ---
 
 ## 🛠 Requirements
