@@ -99,13 +99,14 @@ function processImageUpload(file, isCamera = false) {
         method: 'POST',
         body: formData
     })
-    .then(res => {
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    .then(res => res.json().then(data => ({status: res.status, ok: res.ok, data: data})))
+    .then(response => {
+        if (!response.ok) {
+            // Handle error response from server
+            const errorMessage = response.data.error || 'Upload failed';
+            throw new Error(errorMessage);
         }
-        return res.json();
-    })
-    .then(data => {
+        const data = response.data;
         if (data.image_data) {
             // Generate a unique chat ID for this image
             const chatId = data.id; // Use the server-generated ID
@@ -156,7 +157,8 @@ function processImageUpload(file, isCamera = false) {
     })
     .catch(err => {
         console.error('Upload failed:', err);
-        container.innerHTML = '<p class="text-danger">❌ Upload failed</p>';
+        const errorMsg = err.message || 'Upload failed';
+        container.innerHTML = `<p class="text-danger">❌ ${errorMsg}</p>`;
     });
     }
 
